@@ -182,8 +182,8 @@ const noTownSocket = "gt-no-town-socket"
 const EnvAgentReady = "GT_AGENT_READY"
 
 // NewTmux creates a new Tmux wrapper using the initialized town socket.
-// Falls back to GT_TOWN_SOCKET env var (set by cross-socket tmux bindings),
-// then to a sentinel socket that fails clearly if neither is available.
+// Falls back to GT_TOWN_SOCKET env var (set by cross-socket tmux bindings).
+// Empty socket means use the default tmux server.
 func NewTmux() *Tmux {
 	sock := GetDefaultSocket()
 	if sock == "" {
@@ -191,11 +191,6 @@ func NewTmux() *Tmux {
 		// so that "gt agents menu" / "gt feed" invoked from a personal terminal still
 		// target the correct town server even when InitRegistry was not called.
 		sock = os.Getenv("GT_TOWN_SOCKET")
-	}
-	if sock == "" {
-		// No town context available: use sentinel to produce a clear error rather
-		// than silently connecting to the user's personal tmux server.
-		sock = noTownSocket
 	}
 	return &Tmux{socketName: sock}
 }
@@ -564,6 +559,12 @@ const processKillGracePeriod = 2 * time.Second
 //
 // This ensures Claude processes and all their children are properly terminated.
 func (t *Tmux) KillSessionWithProcesses(name string) error {
+	// Disarm auto-respawn BEFORE killing anything. The pane-died hook would
+	// otherwise respawn the process 3 seconds after we kill it, creating a
+	// zombie that fights every kill attempt.
+	_ = t.SetRemainOnExit(name, false)
+	_, _ = t.run("set-hook", "-t", name, "-u", "pane-died")
+
 	// Get the pane PID
 	pid, err := t.GetPanePID(name)
 	if err != nil {
@@ -632,6 +633,10 @@ func (t *Tmux) KillSessionWithProcesses(name string) error {
 // the calling process (e.g., gt done) is running inside the session it's terminating.
 // Without exclusion, the caller would be killed before completing the cleanup.
 func (t *Tmux) KillSessionWithProcessesExcluding(name string, excludePIDs []string) error {
+	// Disarm auto-respawn BEFORE killing anything (same as KillSessionWithProcesses).
+	_ = t.SetRemainOnExit(name, false)
+	_, _ = t.run("set-hook", "-t", name, "-u", "pane-died")
+
 	// Build exclusion set for O(1) lookup
 	exclude := make(map[string]bool)
 	for _, pid := range excludePIDs {
