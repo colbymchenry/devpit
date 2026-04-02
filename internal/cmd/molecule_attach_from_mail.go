@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/mail"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/mail"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 // runMoleculeAttachFromMail handles the "gt mol attach-from-mail <mail-id>" command.

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/config"
+	"github.com/colbymchenry/devpit/internal/config"
 )
 
 // Route represents a prefix-to-path routing rule.

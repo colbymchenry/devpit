@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/config"
+	"github.com/colbymchenry/devpit/internal/config"
 )
 
 func TestRecordBeadRespawn_Increments(t *testing.T) {

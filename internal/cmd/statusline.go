@@ -8,13 +8,13 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/estop"
-	"github.com/steveyegge/gastown/internal/mail"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/estop"
+	"github.com/colbymchenry/devpit/internal/mail"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 var (

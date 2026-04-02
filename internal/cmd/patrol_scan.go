@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/mail"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/witness"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/mail"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/witness"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 var (

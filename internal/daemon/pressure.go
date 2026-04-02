@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 // PressureResult holds the outcome of a pressure check.

@@ -7,10 +7,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/tui/feed"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/tui/feed"
+	"github.com/colbymchenry/devpit/internal/workspace"
 	"golang.org/x/term"
 )
 

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // setupTestRegistry populates the default session prefix registry for tests.

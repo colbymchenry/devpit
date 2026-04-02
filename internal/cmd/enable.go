@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/state"
-	"github.com/steveyegge/gastown/internal/style"
+	"github.com/colbymchenry/devpit/internal/state"
+	"github.com/colbymchenry/devpit/internal/style"
 )
 
 var enableCmd = &cobra.Command{

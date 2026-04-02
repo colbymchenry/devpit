@@ -3,7 +3,7 @@ package doctor
 import (
 	"fmt"
 
-	"github.com/steveyegge/gastown/internal/deps"
+	"github.com/colbymchenry/devpit/internal/deps"
 )
 
 // BeadsBinaryCheck verifies that the beads (bd) binary is installed and meets

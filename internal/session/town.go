@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/events"
-	"github.com/steveyegge/gastown/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/events"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 // TownSession represents a town-level tmux session.

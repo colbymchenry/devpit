@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/beads"
+	"github.com/colbymchenry/devpit/internal/beads"
 )
 
 // TestFixWorkDir_HQ verifies that Fix() resolves the "hq" rig name to the

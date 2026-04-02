@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/polecat"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/polecat"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 var tapPolecatStopCmd = &cobra.Command{

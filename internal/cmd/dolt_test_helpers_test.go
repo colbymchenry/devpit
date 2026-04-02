@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/steveyegge/gastown/internal/testutil"
+	"github.com/colbymchenry/devpit/internal/testutil"
 )
 
 // requireDoltServer delegates to testutil.RequireDoltContainer.

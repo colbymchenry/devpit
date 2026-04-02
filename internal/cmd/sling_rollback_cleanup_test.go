@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/config"
+	"github.com/colbymchenry/devpit/internal/config"
 )
 
 func writeRollbackCleanupBDStub(t *testing.T, binDir, unixScript, windowsScript string) {

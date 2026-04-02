@@ -556,7 +556,7 @@ func TestRoleShowMismatch(t *testing.T) {
 
 // TestRoleShowNoMismatchAtTownRoot validates that town root + GT_ROLE does not
 // trigger a mismatch warning, since town root returns RoleUnknown (not RoleMayor).
-// Regression test for https://github.com/steveyegge/gastown/issues/1496
+// Regression test for https://github.com/colbymchenry/devpit/issues/1496
 func TestRoleShowNoMismatchAtTownRoot(t *testing.T) {
 	tmpDir := resolveSymlinks(t, t.TempDir())
 	hqPath := filepath.Join(tmpDir, "test-hq")

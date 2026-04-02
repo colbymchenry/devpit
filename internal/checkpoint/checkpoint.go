@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/runtime"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/runtime"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // Filename is the checkpoint file name within the polecat directory.

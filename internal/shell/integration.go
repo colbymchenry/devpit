@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/state"
+	"github.com/colbymchenry/devpit/internal/state"
 )
 
 const (

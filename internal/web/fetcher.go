@@ -14,13 +14,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/activity"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/activity"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 // runCmd executes a command with a timeout and returns stdout.

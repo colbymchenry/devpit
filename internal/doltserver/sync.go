@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/beads"
+	"github.com/colbymchenry/devpit/internal/beads"
 )
 
 // SyncOptions controls the behavior of SyncDatabases.

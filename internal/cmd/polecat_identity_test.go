@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/style"
+	"github.com/colbymchenry/devpit/internal/style"
 )
 
 func TestExtractWorkType(t *testing.T) {

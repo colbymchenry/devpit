@@ -11,9 +11,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/convoy"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/convoy"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 // convoyStageJSON controls whether output is machine-readable JSON.

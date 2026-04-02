@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/steveyegge/gastown/internal/formula"
+	"github.com/colbymchenry/devpit/internal/formula"
 )
 
 // OverlayHealthCheck verifies that formula overlay files reference valid step IDs.

@@ -47,10 +47,10 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofrs/flock"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/util"
 	"gopkg.in/yaml.v3"
 )
 

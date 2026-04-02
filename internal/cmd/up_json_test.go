@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/session"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/session"
 )
 
 func TestBuildUpSummary(t *testing.T) {

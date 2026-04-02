@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/style"
+	"github.com/colbymchenry/devpit/internal/style"
 )
 
 func gasTownIgnorePatterns() []string {

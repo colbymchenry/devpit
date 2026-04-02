@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/session"
+	"github.com/colbymchenry/devpit/internal/session"
 )
 
 func TestValidateCommand(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/events"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/events"
 )
 
 // setupSeanceTestEnv creates a test environment with multiple accounts and sessions.

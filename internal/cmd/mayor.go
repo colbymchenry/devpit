@@ -8,15 +8,15 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/daemon"
-	"github.com/steveyegge/gastown/internal/doltserver"
-	"github.com/steveyegge/gastown/internal/mayor"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/daemon"
+	"github.com/colbymchenry/devpit/internal/doltserver"
+	"github.com/colbymchenry/devpit/internal/mayor"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 var mayorCmd = &cobra.Command{

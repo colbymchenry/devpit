@@ -1,4 +1,4 @@
-module github.com/steveyegge/gastown
+module github.com/colbymchenry/devpit
 
 go 1.25.8
 

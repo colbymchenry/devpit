@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/polecat"
+	"github.com/colbymchenry/devpit/internal/polecat"
 )
 
 func TestEffectivePolecatState(t *testing.T) {

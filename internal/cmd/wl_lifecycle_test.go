@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/doltserver"
+	"github.com/colbymchenry/devpit/internal/doltserver"
 )
 
 func TestLifecycle_PostClaimDone(t *testing.T) {

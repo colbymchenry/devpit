@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/beads"
+	"github.com/colbymchenry/devpit/internal/beads"
 )
 
 type fakeAgentBeadUpserter struct {

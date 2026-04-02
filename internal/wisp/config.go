@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // WispConfigDir is the directory for wisp config storage (never synced via git).

@@ -1,0 +1,50 @@
+{
+  "name": "devpit",
+  "version": "0.1.0",
+  "description": "DevPit CLI — sequential agent pipeline for AI coding agents",
+  "main": "bin/dp.js",
+  "bin": {
+    "dp": "bin/dp.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "keywords": [
+    "ai-agent",
+    "pipeline",
+    "coding-agent",
+    "claude",
+    "gemini",
+    "codex",
+    "tmux",
+    "devpit"
+  ],
+  "author": "Colby McHenry",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/colbymchenry/devpit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/colbymchenry/devpit/issues"
+  },
+  "homepage": "https://github.com/colbymchenry/devpit#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ]
+}

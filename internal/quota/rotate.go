@@ -3,8 +3,8 @@ package quota
 import (
 	"fmt"
 
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // RotateResult holds the result of rotating a single session.

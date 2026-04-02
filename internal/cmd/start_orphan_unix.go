@@ -7,8 +7,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // cleanupOrphanedClaude finds and kills orphaned Claude processes with a grace period.

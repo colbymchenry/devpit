@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/beads"
+	"github.com/colbymchenry/devpit/internal/beads"
 )
 
 // mockHealthSource is a test double for HealthDataSource

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/polecat"
-	"github.com/steveyegge/gastown/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/polecat"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 func TestHandlePolecatDoneFromBead_NilFields(t *testing.T) {

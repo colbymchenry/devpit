@@ -1732,7 +1732,7 @@ func TestAdaptiveTextDelay(t *testing.T) {
 // TestMatchesPromptPrefix verifies that prompt matching handles non-breaking
 // spaces (NBSP, U+00A0) correctly. Claude Code uses NBSP after its > prompt
 // character, but the default ReadyPromptPrefix uses a regular space.
-// Regression test for https://github.com/steveyegge/gastown/issues/1387.
+// Regression test for https://github.com/colbymchenry/devpit/issues/1387.
 func TestMatchesPromptPrefix(t *testing.T) {
 	t.Parallel()
 	const (

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/formula"
+	"github.com/colbymchenry/devpit/internal/formula"
 )
 
 var formulaOverlayEditCmd = &cobra.Command{

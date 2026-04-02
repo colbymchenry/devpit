@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/cli"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/hooks"
-	"github.com/steveyegge/gastown/internal/hookutil"
-	"github.com/steveyegge/gastown/internal/templates/commands"
-	"github.com/steveyegge/gastown/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/cli"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/hooks"
+	"github.com/colbymchenry/devpit/internal/hookutil"
+	"github.com/colbymchenry/devpit/internal/templates/commands"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 // EnsureSettingsForRole provisions all agent-specific configuration for a role.

@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/steveyegge/gastown/internal/ui"
+	"github.com/colbymchenry/devpit/internal/ui"
 )
 
 var (

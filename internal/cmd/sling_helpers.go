@@ -13,19 +13,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/channelevents"
-	"github.com/steveyegge/gastown/internal/cli"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/daemon"
-	"github.com/steveyegge/gastown/internal/formula"
-	rigpkg "github.com/steveyegge/gastown/internal/rig"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/telemetry"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/channelevents"
+	"github.com/colbymchenry/devpit/internal/cli"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/daemon"
+	"github.com/colbymchenry/devpit/internal/formula"
+	rigpkg "github.com/colbymchenry/devpit/internal/rig"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/telemetry"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 // resolveBeadDir returns the directory to run bd commands for a given bead ID.
@@ -994,7 +994,7 @@ func isHookedAgentDead(assignee string) bool {
 // hookBeadWithRetry hooks a bead to a target agent with exponential backoff retry
 // and post-hook verification. This ensures the hook sticks even under Dolt concurrency.
 // Fails fast on configuration/initialization errors (gt-2ra).
-// See: https://github.com/steveyegge/gastown/issues/148
+// See: https://github.com/colbymchenry/devpit/issues/148
 func hookBeadWithRetry(beadID, targetAgent, hookDir string) error {
 	const maxRetries = 10
 	const baseBackoff = 500 * time.Millisecond

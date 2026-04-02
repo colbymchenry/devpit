@@ -17,19 +17,19 @@ import (
 
 	"github.com/gofrs/flock"
 
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/doltserver"
-	"github.com/steveyegge/gastown/internal/git"
-	"github.com/steveyegge/gastown/internal/rig"
-	"github.com/steveyegge/gastown/internal/runtime"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/telemetry"
-	"github.com/steveyegge/gastown/internal/templates"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/util"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/doltserver"
+	"github.com/colbymchenry/devpit/internal/git"
+	"github.com/colbymchenry/devpit/internal/rig"
+	"github.com/colbymchenry/devpit/internal/runtime"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/telemetry"
+	"github.com/colbymchenry/devpit/internal/templates"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/util"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 // Retry constants for Dolt operations (matching hook update pattern in sling.go).
@@ -1119,7 +1119,7 @@ func (m *Manager) RemoveWithOptions(name string, force, nuclear, selfNuke bool) 
 	// This check runs unless selfNuke=true (polecat deleting its own worktree).
 	// When a polecat calls `gt done`, it's inside its worktree by design - the session
 	// will be killed immediately after, so breaking the shell is expected and harmless.
-	// See: https://github.com/steveyegge/gastown/issues/942
+	// See: https://github.com/colbymchenry/devpit/issues/942
 	if !selfNuke {
 		cwd, cwdErr := os.Getwd()
 		if cwdErr == nil {

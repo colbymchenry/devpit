@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 // TestInitRegistry_SocketFromTownName verifies GT_TMUX_SOCKET socket selection:

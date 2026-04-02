@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/steveyegge/gastown/internal/formula"
+	"github.com/colbymchenry/devpit/internal/formula"
 )
 
 func ExampleParse_workflow() {

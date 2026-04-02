@@ -16,9 +16,9 @@ import (
 	"time"
 
 	beadsdk "github.com/steveyegge/beads"
-	"github.com/steveyegge/gastown/internal/runtime"
-	"github.com/steveyegge/gastown/internal/telemetry"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/runtime"
+	"github.com/colbymchenry/devpit/internal/telemetry"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // Common errors

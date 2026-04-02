@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/constants"
+	"github.com/colbymchenry/devpit/internal/constants"
 )
 
 // resolveConfigMu serializes agent config resolution across all callers.
@@ -2325,7 +2325,7 @@ func SanitizeAgentEnv(resolvedEnv, callerEnv map[string]string) {
 	// inherits this variable into its global environment, causing new polecat sessions
 	// to fail with "Nested sessions share runtime resources and will crash all active
 	// sessions." Clear it unless the caller explicitly provides it.
-	// See: https://github.com/steveyegge/gastown/issues/1666
+	// See: https://github.com/colbymchenry/devpit/issues/1666
 	if _, ok := callerEnv["CLAUDECODE"]; !ok {
 		resolvedEnv["CLAUDECODE"] = ""
 	}

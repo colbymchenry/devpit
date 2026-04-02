@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/config"
+	"github.com/colbymchenry/devpit/internal/config"
 )
 
 func TestCheckHelpFlag(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/doltserver"
+	"github.com/colbymchenry/devpit/internal/doltserver"
 )
 
 // TestStampLoop_EndToEnd exercises the full pilot stamp loop:

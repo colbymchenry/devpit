@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/constants"
+	"github.com/colbymchenry/devpit/internal/constants"
 )
 
 // SettingsCheck verifies each rig has a settings/ directory.

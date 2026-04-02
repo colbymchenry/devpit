@@ -1,7 +1,7 @@
 // Package hookutil provides shared utilities for agent hook installers.
 package hookutil
 
-import "github.com/steveyegge/gastown/internal/constants"
+import "github.com/colbymchenry/devpit/internal/constants"
 
 // IsAutonomousRole returns true if the given role operates without human
 // prompting and needs automatic mail injection on startup.

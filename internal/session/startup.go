@@ -2,7 +2,7 @@
 package session
 
 import (
-	"github.com/steveyegge/gastown/internal/cli"
+	"github.com/colbymchenry/devpit/internal/cli"
 	"fmt"
 	"time"
 )
@@ -10,7 +10,7 @@ import (
 // BeaconRecipient formats a human-readable, non-path-like recipient for the
 // startup beacon. Uses "role name (rig: rigName)" format to prevent LLMs from
 // misinterpreting the recipient as a filesystem path and constructing wrong
-// cd commands. See github.com/steveyegge/gastown/issues/1716.
+// cd commands. See github.com/colbymchenry/devpit/issues/1716.
 func BeaconRecipient(role, name, rig string) string {
 	if name != "" && rig != "" {
 		return fmt.Sprintf("%s %s (rig: %s)", role, name, rig)

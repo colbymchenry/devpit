@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/git"
-	"github.com/steveyegge/gastown/internal/polecat"
-	"github.com/steveyegge/gastown/internal/rig"
+	"github.com/colbymchenry/devpit/internal/git"
+	"github.com/colbymchenry/devpit/internal/polecat"
+	"github.com/colbymchenry/devpit/internal/rig"
 )
 
 func stubUncommittedWorkCheckDeps(

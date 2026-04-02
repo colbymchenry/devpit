@@ -9,11 +9,11 @@ import (
 	"sort"
 
 	"github.com/gofrs/flock"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/events"
-	"github.com/steveyegge/gastown/internal/scheduler/capacity"
-	"github.com/steveyegge/gastown/internal/style"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/events"
+	"github.com/colbymchenry/devpit/internal/scheduler/capacity"
+	"github.com/colbymchenry/devpit/internal/style"
 )
 
 // maxDispatchFailures is the maximum number of consecutive dispatch failures

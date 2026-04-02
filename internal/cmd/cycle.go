@@ -5,8 +5,8 @@ import (
 	"sort"
 
 	"github.com/spf13/cobra"
-	sessionpkg "github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/tmux"
+	sessionpkg "github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 // cycleSession is the --session flag for cycle next/prev commands.

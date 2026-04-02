@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // Poller tuning defaults (overridable via flags or tests).

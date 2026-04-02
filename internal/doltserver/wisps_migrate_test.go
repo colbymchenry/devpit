@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/steveyegge/gastown/internal/testutil"
+	"github.com/colbymchenry/devpit/internal/testutil"
 )
 
 // setupBdWorkDir creates a beads-compatible working directory pointing at an

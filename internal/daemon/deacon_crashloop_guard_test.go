@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/deacon"
-	"github.com/steveyegge/gastown/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/deacon"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 func writeFakeTmuxCrashLoop(t *testing.T, dir string) {

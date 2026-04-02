@@ -21,27 +21,27 @@ import (
 
 	"github.com/gofrs/flock"
 	beadsdk "github.com/steveyegge/beads"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/boot"
-	agentconfig "github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/deacon"
-	"github.com/steveyegge/gastown/internal/deps"
-	"github.com/steveyegge/gastown/internal/doltserver"
-	"github.com/steveyegge/gastown/internal/estop"
-	"github.com/steveyegge/gastown/internal/events"
-	"github.com/steveyegge/gastown/internal/feed"
-	gitpkg "github.com/steveyegge/gastown/internal/git"
-	"github.com/steveyegge/gastown/internal/mayor"
-	"github.com/steveyegge/gastown/internal/polecat"
-	"github.com/steveyegge/gastown/internal/refinery"
-	"github.com/steveyegge/gastown/internal/rig"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/telemetry"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/util"
-	"github.com/steveyegge/gastown/internal/wisp"
-	"github.com/steveyegge/gastown/internal/witness"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/boot"
+	agentconfig "github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/deacon"
+	"github.com/colbymchenry/devpit/internal/deps"
+	"github.com/colbymchenry/devpit/internal/doltserver"
+	"github.com/colbymchenry/devpit/internal/estop"
+	"github.com/colbymchenry/devpit/internal/events"
+	"github.com/colbymchenry/devpit/internal/feed"
+	gitpkg "github.com/colbymchenry/devpit/internal/git"
+	"github.com/colbymchenry/devpit/internal/mayor"
+	"github.com/colbymchenry/devpit/internal/polecat"
+	"github.com/colbymchenry/devpit/internal/refinery"
+	"github.com/colbymchenry/devpit/internal/rig"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/telemetry"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/util"
+	"github.com/colbymchenry/devpit/internal/wisp"
+	"github.com/colbymchenry/devpit/internal/witness"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -73,7 +73,7 @@ type Daemon struct {
 
 	// Deacon startup tracking: prevents race condition where newly started
 	// sessions are immediately killed by the heartbeat check.
-	// See: https://github.com/steveyegge/gastown/issues/567
+	// See: https://github.com/colbymchenry/devpit/issues/567
 	// Note: Only accessed from heartbeat loop goroutine - no sync needed.
 	deaconLastStarted time.Time
 

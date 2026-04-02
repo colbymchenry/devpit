@@ -148,7 +148,7 @@ func isMaintainerOrigin() bool {
 	}
 	url := strings.TrimSpace(string(output))
 	// Match both HTTPS and SSH URL formats:
-	// - https://github.com/steveyegge/gastown.git
+	// - https://github.com/colbymchenry/devpit.git
 	// - git@github.com:steveyegge/gastown.git
 	return strings.Contains(url, "steveyegge/gastown")
 }

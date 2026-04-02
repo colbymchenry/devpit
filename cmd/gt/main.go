@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/steveyegge/gastown/internal/cmd"
+	"github.com/colbymchenry/devpit/internal/cmd"
 )
 
 func main() {

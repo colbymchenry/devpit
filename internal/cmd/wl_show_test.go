@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/doltserver"
+	"github.com/colbymchenry/devpit/internal/doltserver"
 )
 
 func TestShowWantedJSON(t *testing.T) {

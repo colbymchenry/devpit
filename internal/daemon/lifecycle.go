@@ -11,13 +11,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/rig"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/rig"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // BeadsMessage represents a message from gt mail inbox --json.
@@ -588,7 +588,7 @@ func (d *Daemon) setSessionEnvironment(sessionName string, roleConfig *beads.Rol
 
 	// Set any custom env vars from role config.
 	// Skip keys already set by AgentEnv to prevent TOML [env] from clobbering
-	// canonical qualified values (e.g., GT_ROLE). See: https://github.com/steveyegge/gastown/issues/2492
+	// canonical qualified values (e.g., GT_ROLE). See: https://github.com/colbymchenry/devpit/issues/2492
 	if roleConfig != nil {
 		for k, v := range roleConfig.EnvVars {
 			if _, alreadySet := envVars[k]; alreadySet {

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/lock"
+	"github.com/colbymchenry/devpit/internal/lock"
 )
 
 // Issue status constants kept as untyped strings for backward compatibility.

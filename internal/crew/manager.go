@@ -11,17 +11,17 @@ import (
 
 	"github.com/gofrs/flock"
 
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/git"
-	"github.com/steveyegge/gastown/internal/nudge"
-	"github.com/steveyegge/gastown/internal/rig"
-	"github.com/steveyegge/gastown/internal/runtime"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/git"
+	"github.com/colbymchenry/devpit/internal/nudge"
+	"github.com/colbymchenry/devpit/internal/rig"
+	"github.com/colbymchenry/devpit/internal/runtime"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // Common errors
@@ -723,7 +723,7 @@ func (m *Manager) Start(name string, opts StartOptions) error {
 	// Compute environment variables BEFORE creating the session.
 	// These are passed via tmux -e flags so the initial shell inherits the correct
 	// env from the start, preventing parent env (e.g., GT_ROLE=mayor) from leaking
-	// into crew sessions. See: https://github.com/steveyegge/gastown/issues/1289
+	// into crew sessions. See: https://github.com/colbymchenry/devpit/issues/1289
 	envVars := config.AgentEnv(config.AgentEnvConfig{
 		Role:             "crew",
 		Rig:              m.rig.Name,
@@ -837,7 +837,7 @@ func (m *Manager) Start(name string, opts StartOptions) error {
 	// The -e flags set session-level env BEFORE the shell starts, ensuring the
 	// initial shell inherits the correct GT_ROLE (not the parent's).
 	// See: https://github.com/anthropics/gastown/issues/280 (race condition fix)
-	// See: https://github.com/steveyegge/gastown/issues/1289 (env inheritance fix)
+	// See: https://github.com/colbymchenry/devpit/issues/1289 (env inheritance fix)
 	if err := t.NewSessionWithCommandAndEnv(sessionID, worker.ClonePath, claudeCmd, envVars); err != nil {
 		return fmt.Errorf("creating session: %w", err)
 	}

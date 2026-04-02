@@ -7,7 +7,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/ui"
+	"github.com/colbymchenry/devpit/internal/ui"
 )
 
 // Style definitions for thanks output using ui package colors

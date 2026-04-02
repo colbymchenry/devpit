@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/formula"
+	"github.com/colbymchenry/devpit/internal/formula"
 )
 
 // FormulaCheck verifies that embedded formulas are up-to-date.

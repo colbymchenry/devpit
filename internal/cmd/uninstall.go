@@ -11,10 +11,10 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/shell"
-	"github.com/steveyegge/gastown/internal/state"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/wrappers"
+	"github.com/colbymchenry/devpit/internal/shell"
+	"github.com/colbymchenry/devpit/internal/state"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/wrappers"
 )
 
 var (
@@ -143,7 +143,7 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	fmt.Printf("%s Gas Town has been uninstalled\n", style.Success.Render("✓"))
 	fmt.Println()
 	fmt.Println("To reinstall, run:")
-	fmt.Printf("  %s\n", style.Dim.Render("go install github.com/steveyegge/gastown/cmd/gt@latest"))
+	fmt.Printf("  %s\n", style.Dim.Render("go install github.com/colbymchenry/devpit/cmd/gt@latest"))
 	fmt.Printf("  %s\n", style.Dim.Render("gt install ~/gt --shell"))
 
 	return nil

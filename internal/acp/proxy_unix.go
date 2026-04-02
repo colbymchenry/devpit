@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // signalsToHandle returns the signals that Forward() should listen for.

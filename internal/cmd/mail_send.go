@@ -10,11 +10,11 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/events"
-	"github.com/steveyegge/gastown/internal/mail"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/events"
+	"github.com/colbymchenry/devpit/internal/mail"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 func runMailSend(cmd *cobra.Command, args []string) error {
@@ -147,7 +147,7 @@ func runMailSend(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		// Validation errors are definitive — do not fall back to legacy routing,
 		// which would silently deliver to a dead inbox.
-		// See: https://github.com/steveyegge/gastown/issues/2038
+		// See: https://github.com/colbymchenry/devpit/issues/2038
 		if errors.Is(err, mail.ErrUnknownRecipient) {
 			return err
 		}

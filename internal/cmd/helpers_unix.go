@@ -9,15 +9,15 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 // attachToTmuxSession attaches to a tmux session.
 // If already inside tmux, uses switch-client instead of attach-session.
 // Uses syscall.Exec to replace the Go process with tmux for direct terminal
 // control, and passes -u for UTF-8 support regardless of locale settings.
-// See: https://github.com/steveyegge/gastown/issues/1219
+// See: https://github.com/colbymchenry/devpit/issues/1219
 func attachToTmuxSession(sessionID string) error {
 	tmuxPath, err := exec.LookPath("tmux")
 	if err != nil {

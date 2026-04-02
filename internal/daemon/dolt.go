@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/doltserver"
+	"github.com/colbymchenry/devpit/internal/doltserver"
 )
 
 const doltCmdTimeout = 15 * time.Second

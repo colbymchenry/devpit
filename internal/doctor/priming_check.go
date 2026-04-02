@@ -4,15 +4,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/steveyegge/gastown/internal/cli"
+	"github.com/colbymchenry/devpit/internal/cli"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/runtime"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/runtime"
 )
 
 // PrimingCheck verifies the priming subsystem is correctly configured.

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/agentlog"
-	"github.com/steveyegge/gastown/internal/telemetry"
+	"github.com/colbymchenry/devpit/internal/agentlog"
+	"github.com/colbymchenry/devpit/internal/telemetry"
 )
 
 var (

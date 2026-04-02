@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/util"
+	"github.com/colbymchenry/devpit/internal/util"
 )
 
 // GitError contains raw output from a git command for agent observation.

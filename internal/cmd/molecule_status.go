@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/git"
-	"github.com/steveyegge/gastown/internal/style"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/git"
+	"github.com/colbymchenry/devpit/internal/style"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 // Note: Agent field parsing is now in internal/beads/fields.go (AgentFields, ParseAgentFields)
@@ -436,7 +436,7 @@ func runMoleculeStatus(cmd *cobra.Command, args []string) error {
 		// For rig-level agents (polecats, crew), also search town-level beads.
 		// When the Mayor slings an hq-* bead to a polecat, the bead lives in
 		// townRoot/.beads, not the rig's .beads database.
-		// See: https://github.com/steveyegge/gastown/issues/1438
+		// See: https://github.com/colbymchenry/devpit/issues/1438
 		if len(hookedBeads) == 0 && !isTownLevelRole(target) && townRoot != "" {
 			townB := beads.New(filepath.Join(townRoot, ".beads"))
 			if townHooked, err := townB.List(beads.ListOptions{
@@ -462,7 +462,7 @@ func runMoleculeStatus(cmd *cobra.Command, args []string) error {
 
 	// Run the lookup. In polecat context, retry with backoff to handle Dolt
 	// propagation lag between the sling write and the nudge arriving here.
-	// See: https://github.com/steveyegge/gastown/issues/2389
+	// See: https://github.com/colbymchenry/devpit/issues/2389
 	var hookBead *beads.Issue
 	isPolecat := roleCtx.Role == RolePolecat ||
 		(os.Getenv("GT_ROLE") != "" && func() bool {

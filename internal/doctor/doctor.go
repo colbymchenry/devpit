@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/ui"
+	"github.com/colbymchenry/devpit/internal/ui"
 )
 
 // Doctor manages and executes health checks.

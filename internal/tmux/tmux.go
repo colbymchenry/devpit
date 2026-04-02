@@ -17,9 +17,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/telemetry"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/telemetry"
 )
 
 // sessionNudgeLocks serializes nudges to the same session.
@@ -219,7 +219,7 @@ func NewTmuxWithSocket(socket string) *Tmux {
 
 // run executes a tmux command and returns stdout.
 // All commands include -u flag for UTF-8 support regardless of locale settings.
-// See: https://github.com/steveyegge/gastown/issues/1219
+// See: https://github.com/colbymchenry/devpit/issues/1219
 func (t *Tmux) run(args ...string) (string, error) {
 	// Prepend global flags: -u (UTF-8 mode, PATCH-004) and optionally -L (socket).
 	// The -L flag must come before the subcommand, so it goes in the prefix.
@@ -2748,7 +2748,7 @@ func (t *Tmux) WaitForShellReady(session string, timeout time.Duration) error {
 // configured ready-prompt prefix. It normalizes non-breaking spaces
 // (U+00A0) to regular spaces before matching, because Claude Code uses
 // NBSP after its ❯ prompt character while the default ReadyPromptPrefix
-// uses a regular space. See https://github.com/steveyegge/gastown/issues/1387.
+// uses a regular space. See https://github.com/colbymchenry/devpit/issues/1387.
 func matchesPromptPrefix(line, readyPromptPrefix string) bool {
 	if readyPromptPrefix == "" {
 		return false
@@ -3183,7 +3183,7 @@ func IsInsideTmux() bool {
 // The binding is conditional: it only activates in Gas Town sessions (those matching
 // a registered rig prefix or "hq-"). In non-GT sessions, the user's original
 // MouseDown1StatusRight binding (if any) is preserved.
-// See: https://github.com/steveyegge/gastown/issues/1548
+// See: https://github.com/colbymchenry/devpit/issues/1548
 func (t *Tmux) SetMailClickBinding(session string) error {
 	// Skip if already configured — preserves user's original fallback from first call
 	if t.isGTBinding("root", "MouseDown1StatusRight") {
@@ -3453,8 +3453,8 @@ func sessionPrefixPattern() string {
 // For non-GT sessions, the user's original binding is preserved. If no
 // prior binding existed, the tmux defaults (next-window/previous-window)
 // are used.
-// See: https://github.com/steveyegge/gastown/issues/13
-// See: https://github.com/steveyegge/gastown/issues/1548
+// See: https://github.com/colbymchenry/devpit/issues/13
+// See: https://github.com/colbymchenry/devpit/issues/1548
 //
 // IMPORTANT: We pass #{session_name} to the command because run-shell doesn't
 // reliably preserve the session context. tmux expands #{session_name} at binding
@@ -3465,7 +3465,7 @@ func (t *Tmux) SetCycleBindings(session string) error {
 	// 2. Has the current prefix pattern (not stale from before a gt rig add)
 	// We must re-bind if an older GT binding exists without --client, or if the
 	// prefix pattern is stale (missing newly added rig prefixes).
-	// See: https://github.com/steveyegge/gastown/issues/2299
+	// See: https://github.com/colbymchenry/devpit/issues/2299
 	pattern := sessionPrefixPattern()
 	if t.isGTBindingWithClient("prefix", "n") && t.isGTBindingCurrent("prefix", "n", pattern) {
 		return nil
@@ -3509,8 +3509,8 @@ func (t *Tmux) SetCycleBindings(session string) error {
 // (those matching a registered rig prefix or "hq-"). For non-GT sessions, the
 // user's original binding is preserved. If no prior binding existed, the key
 // press is silently ignored.
-// See: https://github.com/steveyegge/gastown/issues/13
-// See: https://github.com/steveyegge/gastown/issues/1548
+// See: https://github.com/colbymchenry/devpit/issues/13
+// See: https://github.com/colbymchenry/devpit/issues/1548
 func (t *Tmux) SetFeedBinding(session string) error {
 	pattern := sessionPrefixPattern()
 	// Skip if already configured with the current rig prefix pattern.
@@ -3538,7 +3538,7 @@ func (t *Tmux) SetFeedBinding(session string) error {
 // (those matching a registered rig prefix or "hq-"). For non-GT sessions, the
 // user's original binding is preserved. If no prior binding existed, the key
 // press is silently ignored.
-// See: https://github.com/steveyegge/gastown/issues/1548
+// See: https://github.com/colbymchenry/devpit/issues/1548
 func (t *Tmux) SetAgentsBinding(session string) error {
 	pattern := sessionPrefixPattern()
 	// Skip if already configured with the current rig prefix pattern.

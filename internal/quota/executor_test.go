@@ -9,8 +9,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
 )
 
 // mockExecutor implements TmuxExecutor for testing.

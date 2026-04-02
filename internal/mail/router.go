@@ -11,14 +11,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/beads"
-	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
-	"github.com/steveyegge/gastown/internal/nudge"
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/telemetry"
-	"github.com/steveyegge/gastown/internal/tmux"
-	"github.com/steveyegge/gastown/internal/workspace"
+	"github.com/colbymchenry/devpit/internal/beads"
+	"github.com/colbymchenry/devpit/internal/config"
+	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/nudge"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/telemetry"
+	"github.com/colbymchenry/devpit/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/workspace"
 )
 
 // ErrUnknownList indicates a mailing list name was not found in configuration.
@@ -1634,7 +1634,7 @@ func (r *Router) notifyRecipient(msg *Message) error {
 		// fall back to cooperative queue if busy. WaitForIdle requires 2
 		// consecutive idle polls (prompt visible + no "esc to interrupt"
 		// in the status bar) to distinguish genuine idle from brief
-		// inter-tool-call gaps. See: https://github.com/steveyegge/gastown/issues/2032
+		// inter-tool-call gaps. See: https://github.com/colbymchenry/devpit/issues/2032
 		waitErr := r.tmux.WaitForIdle(sessionID, timeout)
 		if waitErr == nil {
 			// Agent is idle — deliver directly for immediate wakeup.

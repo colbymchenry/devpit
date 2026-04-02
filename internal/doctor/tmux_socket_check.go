@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/steveyegge/gastown/internal/session"
-	"github.com/steveyegge/gastown/internal/tmux"
+	"github.com/colbymchenry/devpit/internal/session"
+	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
 // socketSessionLister is the minimal interface needed to list and kill sessions

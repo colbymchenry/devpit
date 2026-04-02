@@ -2,7 +2,7 @@
 package rig
 
 import (
-	"github.com/steveyegge/gastown/internal/config"
+	"github.com/colbymchenry/devpit/internal/config"
 )
 
 // Rig represents a managed repository in the workspace.

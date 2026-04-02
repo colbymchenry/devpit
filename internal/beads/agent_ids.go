@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/steveyegge/gastown/internal/constants"
+	"github.com/colbymchenry/devpit/internal/constants"
 )
 
 // TownBeadsPrefix is the prefix used for town-level agent beads stored in ~/gt/.beads/.

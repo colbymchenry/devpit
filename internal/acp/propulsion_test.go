@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/steveyegge/gastown/internal/nudge"
+	"github.com/colbymchenry/devpit/internal/nudge"
 )
 
 func TestNewPropeller(t *testing.T) {
