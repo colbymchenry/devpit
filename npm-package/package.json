@@ -1,35 +1,34 @@
 {
-  "name": "@gastown/gt",
-  "version": "0.12.1",
-  "description": "Gas Town CLI - multi-agent workspace manager with native binary support",
-  "main": "bin/gt.js",
+  "name": "@colbymchenry/devpit",
+  "version": "0.1.2",
+  "description": "DevPit CLI — sequential agent pipeline for AI coding agents",
+  "main": "bin/dp.js",
   "bin": {
-    "gt": "bin/gt.js"
+    "dp": "bin/dp.js"
   },
   "scripts": {
-    "postinstall": "node scripts/postinstall.js",
-    "test": "node scripts/test.js"
+    "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [
-    "multi-agent",
-    "workspace-manager",
     "ai-agent",
+    "pipeline",
     "coding-agent",
     "claude",
-    "git",
-    "orchestration"
+    "gemini",
+    "codex",
+    "tmux",
+    "devpit"
   ],
-  "author": "Steve Yegge",
+  "author": "Colby McHenry",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/steveyegge/gastown.git",
-    "directory": "npm-package"
+    "url": "https://github.com/colbymchenry/devpit.git"
   },
   "bugs": {
-    "url": "https://github.com/steveyegge/gastown/issues"
+    "url": "https://github.com/colbymchenry/devpit/issues"
   },
-  "homepage": "https://github.com/steveyegge/gastown#readme",
+  "homepage": "https://github.com/colbymchenry/devpit#readme",
   "engines": {
     "node": ">=14.0.0"
   },

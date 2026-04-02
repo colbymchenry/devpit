@@ -6,204 +6,118 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 
-// Get package version to determine which release to download
 const packageJson = require('../package.json');
 const VERSION = packageJson.version;
+const REPO = 'colbymchenry/devpit';
 
-// Determine platform and architecture
 function getPlatformInfo() {
   const platform = os.platform();
   const arch = os.arch();
 
-  let platformName;
-  let archName;
-  let binaryName = 'gt';
+  let platformName, archName;
+  let binaryName = 'dp';
 
-  // Map Node.js platform names to GitHub release names
   switch (platform) {
-    case 'darwin':
-      platformName = 'darwin';
-      break;
-    case 'linux':
-      platformName = 'linux';
-      break;
-    case 'win32':
-      platformName = 'windows';
-      binaryName = 'gt.exe';
-      break;
-    default:
-      throw new Error(`Unsupported platform: ${platform}`);
+    case 'darwin':  platformName = 'darwin'; break;
+    case 'linux':   platformName = 'linux'; break;
+    case 'win32':   platformName = 'windows'; binaryName = 'dp.exe'; break;
+    default: throw new Error(`Unsupported platform: ${platform}`);
   }
 
-  // Map Node.js arch names to GitHub release names
   switch (arch) {
-    case 'x64':
-      archName = 'amd64';
-      break;
-    case 'arm64':
-      archName = 'arm64';
-      break;
-    default:
-      throw new Error(`Unsupported architecture: ${arch}`);
+    case 'x64':   archName = 'amd64'; break;
+    case 'arm64': archName = 'arm64'; break;
+    default: throw new Error(`Unsupported architecture: ${arch}`);
   }
 
   return { platformName, archName, binaryName };
 }
 
-// Download file from URL
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
-    console.log(`Downloading from: ${url}`);
+    console.log(`Downloading: ${url}`);
     const file = fs.createWriteStream(dest);
 
     const request = https.get(url, (response) => {
-      // Handle redirects
       if (response.statusCode === 301 || response.statusCode === 302) {
-        const redirectUrl = response.headers.location;
-        console.log(`Following redirect to: ${redirectUrl}`);
-        downloadFile(redirectUrl, dest).then(resolve).catch(reject);
+        downloadFile(response.headers.location, dest).then(resolve).catch(reject);
         return;
       }
-
       if (response.statusCode !== 200) {
-        reject(new Error(`Failed to download: HTTP ${response.statusCode}`));
+        reject(new Error(`HTTP ${response.statusCode}`));
         return;
       }
-
       response.pipe(file);
-
       file.on('finish', () => {
-        // Wait for file.close() to complete before resolving
-        // This is critical on Windows where the file may still be locked
-        file.close((err) => {
-          if (err) reject(err);
-          else resolve();
-        });
+        file.close((err) => { if (err) reject(err); else resolve(); });
       });
     });
 
-    request.on('error', (err) => {
-      fs.unlink(dest, () => {});
-      reject(err);
-    });
-
-    file.on('error', (err) => {
-      fs.unlink(dest, () => {});
-      reject(err);
-    });
+    request.on('error', (err) => { fs.unlink(dest, () => {}); reject(err); });
+    file.on('error', (err) => { fs.unlink(dest, () => {}); reject(err); });
   });
 }
 
-// Extract tar.gz file
-function extractTarGz(tarGzPath, destDir, binaryName) {
-  console.log(`Extracting ${tarGzPath}...`);
-
-  try {
-    // Use tar command to extract
-    execSync(`tar -xzf "${tarGzPath}" -C "${destDir}"`, { stdio: 'inherit' });
-
-    // The binary should now be in destDir
-    const extractedBinary = path.join(destDir, binaryName);
-
-    if (!fs.existsSync(extractedBinary)) {
-      throw new Error(`Binary not found after extraction: ${extractedBinary}`);
-    }
-
-    // Make executable on Unix-like systems
-    if (os.platform() !== 'win32') {
-      fs.chmodSync(extractedBinary, 0o755);
-    }
-
-    console.log(`Binary extracted to: ${extractedBinary}`);
-  } catch (err) {
-    throw new Error(`Failed to extract archive: ${err.message}`);
-  }
-}
-
-// Extract zip file (for Windows)
-function extractZip(zipPath, destDir, binaryName) {
-  console.log(`Extracting ${zipPath}...`);
-
-  try {
-    // Use unzip command or powershell on Windows
+function extractArchive(archivePath, destDir, binaryName, isZip) {
+  if (isZip) {
     if (os.platform() === 'win32') {
-      execSync(`powershell -command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`, { stdio: 'inherit' });
+      execSync(`powershell -command "Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force"`, { stdio: 'inherit' });
     } else {
-      execSync(`unzip -o "${zipPath}" -d "${destDir}"`, { stdio: 'inherit' });
+      execSync(`unzip -o "${archivePath}" -d "${destDir}"`, { stdio: 'inherit' });
     }
+  } else {
+    execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { stdio: 'inherit' });
+  }
 
-    // The binary should now be in destDir
-    const extractedBinary = path.join(destDir, binaryName);
+  const extractedBinary = path.join(destDir, binaryName);
+  if (!fs.existsSync(extractedBinary)) {
+    throw new Error(`Binary not found after extraction: ${extractedBinary}`);
+  }
 
-    if (!fs.existsSync(extractedBinary)) {
-      throw new Error(`Binary not found after extraction: ${extractedBinary}`);
-    }
-
-    console.log(`Binary extracted to: ${extractedBinary}`);
-  } catch (err) {
-    throw new Error(`Failed to extract archive: ${err.message}`);
+  if (os.platform() !== 'win32') {
+    fs.chmodSync(extractedBinary, 0o755);
   }
 }
 
-// Main installation function
 async function install() {
   try {
     const { platformName, archName, binaryName } = getPlatformInfo();
+    console.log(`Installing dp v${VERSION} for ${platformName}-${archName}...`);
 
-    console.log(`Installing gt v${VERSION} for ${platformName}-${archName}...`);
+    const isZip = platformName === 'windows';
+    const ext = isZip ? 'zip' : 'tar.gz';
+    const archiveName = `devpit_${VERSION}_${platformName}_${archName}.${ext}`;
+    const downloadUrl = `https://github.com/${REPO}/releases/download/v${VERSION}/${archiveName}`;
 
-    // Construct download URL
-    // Format: https://github.com/steveyegge/gastown/releases/download/v0.1.0/gastown_0.1.0_darwin_amd64.tar.gz
-    const releaseVersion = VERSION;
-    const archiveExt = platformName === 'windows' ? 'zip' : 'tar.gz';
-    const archiveName = `gastown_${releaseVersion}_${platformName}_${archName}.${archiveExt}`;
-    const downloadUrl = `https://github.com/steveyegge/gastown/releases/download/v${releaseVersion}/${archiveName}`;
-
-    // Determine destination paths
     const binDir = path.join(__dirname, '..', 'bin');
     const archivePath = path.join(binDir, archiveName);
-    const binaryPath = path.join(binDir, binaryName);
 
-    // Ensure bin directory exists
     if (!fs.existsSync(binDir)) {
       fs.mkdirSync(binDir, { recursive: true });
     }
 
-    // Download the archive
-    console.log(`Downloading gt binary...`);
     await downloadFile(downloadUrl, archivePath);
-
-    // Extract the archive based on platform
-    if (platformName === 'windows') {
-      extractZip(archivePath, binDir, binaryName);
-    } else {
-      extractTarGz(archivePath, binDir, binaryName);
-    }
-
-    // Clean up archive
+    extractArchive(archivePath, binDir, binaryName, isZip);
     fs.unlinkSync(archivePath);
 
-    // Verify the binary works
     try {
-      const output = execSync(`"${binaryPath}" version`, { encoding: 'utf8' });
-      console.log(`gt installed successfully: ${output.trim()}`);
+      const output = execSync(`"${path.join(binDir, binaryName)}" --version`, { encoding: 'utf8' });
+      console.log(`dp installed: ${output.trim()}`);
     } catch (err) {
       console.warn('Warning: Could not verify binary version');
     }
 
   } catch (err) {
-    console.error(`Error installing gt: ${err.message}`);
+    console.error(`Error installing dp: ${err.message}`);
     console.error('');
-    console.error('Installation failed. You can try:');
-    console.error('1. Installing manually from: https://github.com/steveyegge/gastown/releases');
-    console.error('2. Opening an issue: https://github.com/steveyegge/gastown/issues');
+    console.error('Manual install:');
+    console.error(`  https://github.com/${REPO}/releases`);
     process.exit(1);
   }
 }
 
-// Run installation if not in CI environment
 if (!process.env.CI) {
   install();
 } else {
-  console.log('Skipping binary download in CI environment');
+  console.log('Skipping binary download in CI');
 }

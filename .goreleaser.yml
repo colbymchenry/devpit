@@ -1,4 +1,4 @@
-# GoReleaser configuration for Gas Town (gt)
+# GoReleaser configuration for DevPit (dp)
 # See https://goreleaser.com for documentation
 
 version: 2
@@ -9,9 +9,9 @@ before:
     - go mod tidy
 
 builds:
-  - id: gt-linux-amd64
-    main: ./cmd/gt
-    binary: gt
+  - id: dp-linux-amd64
+    main: ./cmd/dp
+    binary: dp
     env:
       - CGO_ENABLED=1
     goos:
@@ -20,14 +20,10 @@ builds:
       - amd64
     ldflags:
       - -s -w
-      - -X github.com/steveyegge/gastown/internal/cmd.Version={{.Version}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Build={{.ShortCommit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Commit={{.Commit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Branch={{.Branch}}
 
-  - id: gt-linux-arm64
-    main: ./cmd/gt
-    binary: gt
+  - id: dp-linux-arm64
+    main: ./cmd/dp
+    binary: dp
     env:
       - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
@@ -38,14 +34,10 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/steveyegge/gastown/internal/cmd.Version={{.Version}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Build={{.ShortCommit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Commit={{.Commit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Branch={{.Branch}}
 
-  - id: gt-darwin-amd64
-    main: ./cmd/gt
-    binary: gt
+  - id: dp-darwin-amd64
+    main: ./cmd/dp
+    binary: dp
     env:
       - CGO_ENABLED=1
     goos:
@@ -54,14 +46,10 @@ builds:
       - amd64
     ldflags:
       - -s -w
-      - -X github.com/steveyegge/gastown/internal/cmd.Version={{.Version}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Build={{.ShortCommit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Commit={{.Commit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Branch={{.Branch}}
 
-  - id: gt-darwin-arm64
-    main: ./cmd/gt
-    binary: gt
+  - id: dp-darwin-arm64
+    main: ./cmd/dp
+    binary: dp
     env:
       - CGO_ENABLED=1
     goos:
@@ -70,14 +58,10 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/steveyegge/gastown/internal/cmd.Version={{.Version}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Build={{.ShortCommit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Commit={{.Commit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Branch={{.Branch}}
 
-  - id: gt-windows-amd64
-    main: ./cmd/gt
-    binary: gt
+  - id: dp-windows-amd64
+    main: ./cmd/dp
+    binary: dp
     env:
       - CGO_ENABLED=1
       - CC=x86_64-w64-mingw32-gcc
@@ -88,15 +72,11 @@ builds:
       - amd64
     ldflags:
       - -s -w
-      - -X github.com/steveyegge/gastown/internal/cmd.Version={{.Version}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Build={{.ShortCommit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Commit={{.Commit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Branch={{.Branch}}
       - -buildmode=exe
 
-  - id: gt-freebsd-amd64
-    main: ./cmd/gt
-    binary: gt
+  - id: dp-freebsd-amd64
+    main: ./cmd/dp
+    binary: dp
     env:
       - CGO_ENABLED=0
     goos:
@@ -105,14 +85,10 @@ builds:
       - amd64
     ldflags:
       - -s -w
-      - -X github.com/steveyegge/gastown/internal/cmd.Version={{.Version}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Build={{.ShortCommit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Commit={{.Commit}}
-      - -X github.com/steveyegge/gastown/internal/cmd.Branch={{.Branch}}
 
 
 archives:
-  - id: gt-archive
+  - id: dp-archive
     format: tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
@@ -150,26 +126,21 @@ changelog:
 
 release:
   github:
-    owner: steveyegge
-    name: gastown
+    owner: colbymchenry
+    name: devpit
   draft: false
   prerelease: auto
   name_template: "v{{.Version}}"
   header: |
-    ## Gas Town v{{.Version}}
+    ## DevPit v{{.Version}}
 
     Pre-compiled binaries for Linux, macOS (Intel & Apple Silicon), and Windows.
 
     ### Installation
 
-    **Homebrew (macOS/Linux):**
-    ```bash
-    brew install gastown
-    ```
-
     **npm (Node.js):**
     ```bash
-    npm install -g @gastown/gt
+    npm install -g @colbymchenry/devpit
     ```
 
     **Manual Install:**
