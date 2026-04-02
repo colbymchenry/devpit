@@ -224,7 +224,7 @@ Examples:
 		if err != nil {
 			return fmt.Errorf("tmux not found: %w", err)
 		}
-		return syscall.Exec(tmuxPath, []string{"tmux", "-u", "attach-session", "-t", session}, os.Environ())
+		return syscall.Exec(tmuxPath, []string{"tmux", "-u", "attach-session", "-t", session}, os.Environ()) //nolint:gosec // tmuxPath is from exec.LookPath
 	},
 }
 
@@ -346,8 +346,8 @@ Examples:
 
 		// Write prompt to a temp file to avoid tmux command length limits.
 		promptFile := filepath.Join(tmpDir, "prompt.txt")
-		if err := os.WriteFile(promptFile, []byte(prompt), 0o644); err != nil {
-			os.RemoveAll(tmpDir)
+		if err := os.WriteFile(promptFile, []byte(prompt), 0o600); err != nil {
+			_ = os.RemoveAll(tmpDir)
 			return fmt.Errorf("write prompt file: %w", err)
 		}
 
@@ -381,7 +381,7 @@ Examples:
 		if err != nil {
 			return fmt.Errorf("tmux not found: %w", err)
 		}
-		return syscall.Exec(tmuxPath, []string{"tmux", "-u", "attach-session", "-t", session}, os.Environ())
+		return syscall.Exec(tmuxPath, []string{"tmux", "-u", "attach-session", "-t", session}, os.Environ()) //nolint:gosec // tmuxPath is from exec.LookPath
 	},
 }
 

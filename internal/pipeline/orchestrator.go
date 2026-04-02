@@ -216,7 +216,7 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 
 // runStep executes a single pipeline step: spawn agent, wait for completion,
 // capture output, kill session, save artifact.
-func runStep(t *tmux.Tmux, name string, opts PipelineOpts, agents map[string]*AgentConfig, spawnOpts SpawnOptions, buildPrompt func() string) (string, error) {
+func runStep(t *tmux.Tmux, name string, opts PipelineOpts, _ map[string]*AgentConfig, spawnOpts SpawnOptions, buildPrompt func() string) (string, error) {
 	prompt := buildPrompt()
 
 	session, err := SpawnAgent(t, name, opts.ProjectDir, prompt, spawnOpts)
