@@ -31,6 +31,13 @@ var helpStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#6B7280")).
 	Padding(1, 0, 0, 0)
 
+// shared holds mutable state shared across all copies of Model.
+// Bubbletea copies the model by value, so we need a pointer to
+// shared state for the goroutine-spawned pipeline to call program.Send().
+type shared struct {
+	program *tea.Program
+}
+
 // Model is the top-level bubbletea model.
 type Model struct {
 	activeView core.View
@@ -44,7 +51,7 @@ type Model struct {
 	keys       core.KeyMap
 	width      int
 	height     int
-	program    *tea.Program
+	shared     *shared
 }
 
 // Run starts the TUI application.
@@ -56,7 +63,7 @@ func Run() error {
 
 	m := NewModel(projectDir)
 	p := tea.NewProgram(m, tea.WithAltScreen())
-	m.program = p
+	m.shared.program = p // shared pointer — visible to bubbletea's copy of m
 
 	_, err = p.Run()
 	return err
@@ -74,6 +81,7 @@ func NewModel(projectDir string) Model {
 		projectDir: projectDir,
 		tmux:       t,
 		keys:       core.DefaultKeyMap(),
+		shared:     &shared{},
 	}
 }
 
@@ -186,7 +194,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case core.ViewLaunch:
 		var cmd tea.Cmd
-		m.launch, cmd = m.launch.Update(msg, m.projectDir, m.program)
+		m.launch, cmd = m.launch.Update(msg, m.projectDir, m.shared.program)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}

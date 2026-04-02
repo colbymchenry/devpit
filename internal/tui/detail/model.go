@@ -99,10 +99,15 @@ func (m Model) SelectedAgent() string {
 // UpdateOutput sets the live tmux output for the selected agent.
 func (m Model) UpdateOutput(msg core.PaneOutputMsg) Model {
 	if m.showOutput && msg.Agent == m.SelectedAgent() {
+		// Don't overwrite existing output with empty content —
+		// the session may have been killed after the step completed.
+		if strings.TrimSpace(msg.Output) == "" {
+			m.outputIdle = true
+			return m
+		}
 		m.output = msg.Output
 		m.outputIdle = msg.IsIdle
 		m.viewport.SetContent(msg.Output)
-		// Auto-scroll to bottom for live output
 		m.viewport.GotoBottom()
 	}
 	return m
@@ -221,7 +226,13 @@ func (m Model) View() string {
 			Foreground(lipgloss.Color("#A78BFA")).
 			Bold(true).
 			Render(label) + "\n\n")
-		b.WriteString(m.viewport.View())
+		if strings.TrimSpace(m.output) == "" {
+			b.WriteString(lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#6B7280")).
+				Render("  Waiting for output..."))
+		} else {
+			b.WriteString(m.viewport.View())
+		}
 		return b.String()
 	}
 
