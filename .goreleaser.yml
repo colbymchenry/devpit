@@ -20,6 +20,7 @@ builds:
       - amd64
     ldflags:
       - -s -w
+      - -X main.version={{.Version}}
 
   - id: dp-linux-arm64
     main: ./cmd/dp
@@ -34,6 +35,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
+      - -X main.version={{.Version}}
 
   - id: dp-darwin-amd64
     main: ./cmd/dp
@@ -46,6 +48,7 @@ builds:
       - amd64
     ldflags:
       - -s -w
+      - -X main.version={{.Version}}
 
   - id: dp-darwin-arm64
     main: ./cmd/dp
@@ -58,6 +61,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
+      - -X main.version={{.Version}}
 
   - id: dp-windows-amd64
     main: ./cmd/dp
@@ -72,6 +76,7 @@ builds:
       - amd64
     ldflags:
       - -s -w
+      - -X main.version={{.Version}}
       - -buildmode=exe
 
   - id: dp-freebsd-amd64
@@ -85,6 +90,7 @@ builds:
       - amd64
     ldflags:
       - -s -w
+      - -X main.version={{.Version}}
 
 
 archives:
