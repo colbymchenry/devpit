@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -313,16 +314,28 @@ Examples:
 		if err != nil {
 			return err
 		}
-		defer os.RemoveAll(tmpDir)
+		// Don't defer cleanup — tmux session needs the files after we exec.
+		// The prompt file and templates will be cleaned up on next run or reboot.
 
 		prompt := setupagents.SkillPrompt(tmpDir)
+
+		// Write prompt to a temp file to avoid tmux command length limits.
+		promptFile := filepath.Join(tmpDir, "prompt.txt")
+		if err := os.WriteFile(promptFile, []byte(prompt), 0o644); err != nil {
+			os.RemoveAll(tmpDir)
+			return fmt.Errorf("write prompt file: %w", err)
+		}
 
 		presetName := flagAgent
 		if presetName == "" {
 			presetName = "claude"
 		}
 		rc := config.RuntimeConfigFromPreset(config.AgentPreset(presetName))
-		command := "exec env PIPELINE_AGENT=setup " + rc.BuildCommandWithPrompt(prompt)
+		baseCommand := rc.BuildCommand()
+
+		// Pass prompt via --append-system-prompt-file to avoid arg length limits.
+		// Add a short initial message so claude starts immediately.
+		command := fmt.Sprintf("exec env PIPELINE_AGENT=setup %s --append-system-prompt-file %s 'Run the setup-agents skill now. Analyze this project and interview me to generate agent files.'", baseCommand, quoteForShell(promptFile))
 
 		t := tmux.NewTmux()
 		session := pipeline.SessionPrefix + "setup-agents"
@@ -345,4 +358,9 @@ Examples:
 		}
 		return syscall.Exec(tmuxPath, []string{"tmux", "-u", "attach-session", "-t", session}, os.Environ())
 	},
+}
+
+// quoteForShell wraps a string in single quotes, escaping embedded single quotes.
+func quoteForShell(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
 }
