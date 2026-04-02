@@ -59,7 +59,7 @@ CLAUDE.md
 # Formulas: source of truth is internal/formula/formulas/ (embedded in binary).
 # .beads/formulas/ is provisioned at runtime by gt install / gt doctor fix.
 
-# Gas Town (added by gt)
+# DevPit
 .beads/
 .logs/
 logs/
@@ -78,7 +78,7 @@ result
 # Opencode
 .opencode/
 
-# Gas Town (added by gt)
+# DevPit
 __pycache__/
 
 # Dolt database files (added by bd init)

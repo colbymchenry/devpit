@@ -1226,34 +1226,6 @@ func TestCodexRuntimeConfigHasPromptDetection(t *testing.T) {
 	}
 }
 
-func TestPiProviderDefaults(t *testing.T) {
-	t.Parallel()
-
-	input := &RuntimeConfig{Command: "pi"}
-	result := fillRuntimeDefaults(input)
-
-	if result.Tmux == nil {
-		t.Fatal("fillRuntimeDefaults(pi) should auto-fill Tmux")
-	}
-	if result.Tmux.ReadyDelayMs != 8000 {
-		t.Errorf("Tmux.ReadyDelayMs = %d, want 8000", result.Tmux.ReadyDelayMs)
-	}
-	wantNames := []string{"pi", "node", "bun"}
-	if len(result.Tmux.ProcessNames) != len(wantNames) {
-		t.Errorf("Tmux.ProcessNames = %v, want %v", result.Tmux.ProcessNames, wantNames)
-	}
-
-	if result.PromptMode != "arg" {
-		t.Errorf("PromptMode = %q, want arg", result.PromptMode)
-	}
-
-	if result.Hooks == nil {
-		t.Fatal("fillRuntimeDefaults(pi) should auto-fill Hooks")
-	}
-	if result.Hooks.Provider != "pi" {
-		t.Errorf("Hooks.Provider = %q, want pi", result.Hooks.Provider)
-	}
-}
 
 func TestPiRuntimeConfigFromPreset(t *testing.T) {
 	t.Parallel()

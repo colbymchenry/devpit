@@ -40,17 +40,28 @@ async function main() {
   const updated = JSON.parse(fs.readFileSync(PKG_PATH, 'utf-8'));
   console.log(`\nVersion bumped to ${updated.version}`);
 
-  const confirm = await ask(`Publish ${updated.name}@${updated.version} to npm? (y/n): `);
+  const confirm = await ask(`Release ${updated.name}@${updated.version}? This will tag and push to trigger CI. (y/n): `);
   if (confirm.trim().toLowerCase() !== 'y') {
     console.log('Aborted.');
     rl.close();
     process.exit(0);
   }
 
-  console.log('\nPublishing...');
-  execSync('npm publish --access public', { stdio: 'inherit', cwd: __dirname });
+  // Commit the version bump, tag, and push to trigger release workflow
+  const tag = `v${updated.version}`;
+  const rootDir = path.resolve(__dirname, '..');
 
-  console.log(`\nPublished ${updated.name}@${updated.version}`);
+  console.log('\nCommitting version bump...');
+  execSync(`git add ${PKG_PATH}`, { stdio: 'inherit', cwd: rootDir });
+  execSync(`git commit -m "Release ${tag}"`, { stdio: 'inherit', cwd: rootDir });
+
+  console.log(`Tagging ${tag}...`);
+  execSync(`git tag ${tag}`, { stdio: 'inherit', cwd: rootDir });
+
+  console.log('Pushing to remote...');
+  execSync(`git push && git push origin ${tag}`, { stdio: 'inherit', cwd: rootDir });
+
+  console.log(`\nPushed ${tag} — release workflow will build binaries and publish to npm.`);
   rl.close();
 }
 

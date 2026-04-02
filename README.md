@@ -147,7 +147,7 @@ plan the implementation, and flag risks...
 
 ## Multi-Runtime Support
 
-DevPit works with any AI CLI that gastown supports. The `--agent` flag selects the runtime:
+DevPit works with multiple AI CLIs. The `--agent` flag selects the runtime:
 
 ```bash
 dp pipeline "task" --agent claude    # Claude Code (default)
@@ -156,17 +156,15 @@ dp pipeline "task" --agent codex     # OpenAI Codex
 dp pipeline "task" --agent copilot   # GitHub Copilot
 ```
 
-Each runtime has its own readiness detection, prompt delivery, and startup dialog handling — all inherited from gastown's battle-tested tmux layer.
+Each runtime has its own readiness detection, prompt delivery, and startup dialog handling built into the tmux layer.
 
 ## How It's Built
 
-DevPit is a focused entrypoint into gastown's infrastructure. It uses:
+DevPit's tmux layer handles the hard parts of agent orchestration:
 
-- **gastown's tmux wrapper** — session creation, the 8-step nudge protocol, idle detection with 2-consecutive-poll filtering, NBSP-normalized prompt matching, verified Enter delivery
-- **gastown's agent preset system** — runtime-specific commands, args, readiness detection for Claude, Gemini, Codex, Copilot, and others
-- **gastown's startup dialog acceptance** — auto-dismisses workspace trust and bypass-permissions dialogs
-
-No Dolt databases, no merge queues, no fleet monitoring. Just the tmux layer and a sequential pipeline.
+- **Session management** — creation, the 8-step nudge protocol, idle detection with 2-consecutive-poll filtering, NBSP-normalized prompt matching, verified Enter delivery
+- **Agent preset system** — runtime-specific commands, args, readiness detection for Claude, Gemini, Codex, Copilot, and others
+- **Startup dialog acceptance** — auto-dismisses workspace trust and bypass-permissions dialogs
 
 ## License
 
