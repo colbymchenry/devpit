@@ -16,27 +16,29 @@ import (
 
 const (
 	fieldTask = iota
+	fieldWorkflow
 	fieldAgent
 	fieldSubmit
+	fieldCount = 4
 )
 
-// Model is the pipeline launch form model.
+// Model is the run launch form model.
 type Model struct {
-	taskInput  textinput.Model
-	agent      string
-	agents     []string
-	agentIdx   int
-	skipReview bool
-	skipQA     bool
-	focus      int
-	width      int
-	height     int
-	keys       core.KeyMap
-	err        string
+	taskInput   textinput.Model
+	workflows   []string // "default" + discovered workflow names
+	workflowIdx int
+	agent       string
+	agents      []string
+	agentIdx    int
+	focus       int
+	width       int
+	height      int
+	keys        core.KeyMap
+	err         string
 }
 
-// New creates a new launch form model.
-func New() Model {
+// NewWithProject creates a new launch form model, discovering available workflows.
+func NewWithProject(projectDir string) Model {
 	ti := textinput.New()
 	ti.Placeholder = "Describe the task..."
 	ti.CharLimit = 500
@@ -48,7 +50,6 @@ func New() Model {
 	ti.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#A78BFA"))
 
 	agents := config.ListAgentPresets()
-	// Ensure claude is first
 	for i, a := range agents {
 		if a == "claude" && i != 0 {
 			agents[0], agents[i] = agents[i], agents[0]
@@ -56,12 +57,21 @@ func New() Model {
 		}
 	}
 
+	// Discover available workflows from .claude/workflows/.
+	workflows := pipeline.DiscoverWorkflows(projectDir)
+
 	return Model{
 		taskInput: ti,
+		workflows: workflows,
 		agent:     "claude",
 		agents:    agents,
 		keys:      core.DefaultKeyMap(),
 	}
+}
+
+// New creates a new launch form model (backward compat, no workflow discovery).
+func New() Model {
+	return NewWithProject("")
 }
 
 // Focus activates the task input field.
@@ -81,13 +91,30 @@ func (m Model) SetSize(w, h int) Model {
 	return m
 }
 
+// SelectedWorkflow returns the currently selected workflow name.
+func (m Model) SelectedWorkflow() string {
+	if len(m.workflows) == 0 {
+		return ""
+	}
+	return m.workflows[m.workflowIdx]
+}
+
 // Update handles input for the launch form.
 func (m Model) Update(msg tea.Msg, projectDir string, program *tea.Program) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keys.Tab):
-			m.focus = (m.focus + 1) % 3
+		case key.Matches(msg, m.keys.Tab), key.Matches(msg, m.keys.Down):
+			m.focus = (m.focus + 1) % fieldCount
+			if m.focus == fieldTask {
+				m.taskInput.Focus()
+			} else {
+				m.taskInput.Blur()
+			}
+			return m, nil
+
+		case key.Matches(msg, m.keys.Up):
+			m.focus = (m.focus + fieldCount - 1) % fieldCount
 			if m.focus == fieldTask {
 				m.taskInput.Focus()
 			} else {
@@ -104,6 +131,10 @@ func (m Model) Update(msg tea.Msg, projectDir string, program *tea.Program) (Mod
 				m.agent = m.agents[m.agentIdx]
 				return m, nil
 			}
+			if m.focus == fieldWorkflow && len(m.workflows) > 0 {
+				m.workflowIdx = (m.workflowIdx + 1) % len(m.workflows)
+				return m, nil
+			}
 
 		case msg.String() == "left" || msg.String() == "right":
 			if m.focus == fieldAgent {
@@ -113,6 +144,14 @@ func (m Model) Update(msg tea.Msg, projectDir string, program *tea.Program) (Mod
 					m.agentIdx = (m.agentIdx - 1 + len(m.agents)) % len(m.agents)
 				}
 				m.agent = m.agents[m.agentIdx]
+				return m, nil
+			}
+			if m.focus == fieldWorkflow && len(m.workflows) > 0 {
+				if msg.String() == "right" {
+					m.workflowIdx = (m.workflowIdx + 1) % len(m.workflows)
+				} else {
+					m.workflowIdx = (m.workflowIdx - 1 + len(m.workflows)) % len(m.workflows)
+				}
 				return m, nil
 			}
 		}
@@ -135,12 +174,23 @@ func (m Model) submit(projectDir string, program *tea.Program) (Model, tea.Cmd) 
 		return m, nil
 	}
 
+	if len(m.workflows) == 0 {
+		m.err = "No workflows available. Press esc, then c to create one."
+		return m, nil
+	}
+
 	m.err = ""
 
-	// Check for agent files
-	steps := pipeline.DiscoverPipeline(projectDir)
-	if len(steps) == 0 {
-		m.err = "No agent files found. Run 'dp setup-agents' first."
+	// Load the selected workflow.
+	selectedWf := m.SelectedWorkflow()
+	wfPath, err := pipeline.FindWorkflow(projectDir, selectedWf)
+	if err != nil {
+		m.err = "Workflow not found: " + err.Error()
+		return m, nil
+	}
+	wf, err := pipeline.LoadWorkflow(wfPath)
+	if err != nil {
+		m.err = "Invalid workflow: " + err.Error()
 		return m, nil
 	}
 
@@ -153,7 +203,7 @@ func (m Model) submit(projectDir string, program *tea.Program) (Model, tea.Cmd) 
 
 	// Launch pipeline in goroutine
 	go func() {
-		result, err := pipeline.Run(pipeline.PipelineOpts{
+		result, err := pipeline.RunWorkflow(wf, pipeline.PipelineOpts{
 			Task:        task,
 			ProjectDir:  projectDir,
 			AgentPreset: m.agent,
@@ -230,7 +280,7 @@ func (m Model) View() string {
 	focusLabel := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorPurpleLight)).Bold(true)
 
 	var lines []string
-	lines = append(lines, core.PanelTop("New Pipeline", panelWidth, bc))
+	lines = append(lines, core.PanelTop("New Run", panelWidth, bc))
 	lines = append(lines, core.PanelEmpty(panelWidth, bc))
 
 	// Task input
@@ -256,6 +306,36 @@ func (m Model) View() string {
 		lines = append(lines, core.PanelRow(
 			lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorDim)).Render(strings.Repeat("─", inputWidth)),
 			panelWidth, bc))
+	}
+
+	lines = append(lines, core.PanelEmpty(panelWidth, bc))
+
+	// Workflow selector
+	var wfLabel string
+	if m.focus == fieldWorkflow {
+		wfLabel = focusLabel.Render("Workflow")
+	} else {
+		wfLabel = label.Render("Workflow")
+	}
+	lines = append(lines, core.PanelRow(wfLabel, panelWidth, bc))
+
+	if len(m.workflows) == 0 {
+		noWfStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorRed))
+		lines = append(lines, core.PanelRow(noWfStyle.Render("No workflows found — press esc, then c to create one"), panelWidth, bc))
+	} else {
+		arrowColor := core.ColorDim
+		if m.focus == fieldWorkflow {
+			arrowColor = core.ColorGreen
+		}
+		arrowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(arrowColor))
+		wfBadge := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(core.ColorWhite)).
+			Background(lipgloss.Color(core.ColorGreen)).
+			Padding(0, 1).
+			Bold(true)
+
+		wfRow := arrowStyle.Render("◀ ") + wfBadge.Render(m.SelectedWorkflow()) + arrowStyle.Render(" ▶")
+		lines = append(lines, core.PanelRow(wfRow, panelWidth, bc))
 	}
 
 	lines = append(lines, core.PanelEmpty(panelWidth, bc))
@@ -292,11 +372,11 @@ func (m Model) View() string {
 			Background(lipgloss.Color(core.ColorGreen)).
 			Bold(true).
 			Padding(0, 3)
-		lines = append(lines, core.PanelRow(btn.Render("Start Pipeline"), panelWidth, bc))
+		lines = append(lines, core.PanelRow(btn.Render("Run"), panelWidth, bc))
 	} else {
 		btn := lipgloss.NewStyle().
 			Foreground(lipgloss.Color(core.ColorMuted))
-		lines = append(lines, core.PanelRow(btn.Render("[ Start Pipeline ]"), panelWidth, bc))
+		lines = append(lines, core.PanelRow(btn.Render("[ Run ]"), panelWidth, bc))
 	}
 
 	// Error message

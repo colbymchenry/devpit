@@ -349,6 +349,9 @@ func (t *Tmux) NewSessionWithCommand(name, workDir, command string) error {
 		}
 	}
 
+	// Clear scrollback buffer so old content from previous sessions doesn't bleed through.
+	_, _ = t.run("clear-history", "-t", name)
+
 	return t.checkSessionAfterCreate(name, command)
 }
 
@@ -428,6 +431,9 @@ func (t *Tmux) NewSessionWithCommandAndEnv(name, workDir, command string, env ma
 			return fmt.Errorf("failed to start command in session %q: %w", name, err)
 		}
 	}
+
+	// Clear scrollback buffer so old content from previous sessions doesn't bleed through.
+	_, _ = t.run("clear-history", "-t", name)
 
 	return t.checkSessionAfterCreate(name, command)
 }

@@ -8,4 +8,5 @@ const (
 	ViewDetail
 	ViewLaunch
 	ViewHistory
+	ViewCreate
 )

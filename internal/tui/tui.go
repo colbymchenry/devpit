@@ -13,6 +13,7 @@ import (
 	"github.com/colbymchenry/devpit/internal/pipeline"
 	"github.com/colbymchenry/devpit/internal/tmux"
 	"github.com/colbymchenry/devpit/internal/tui/core"
+	"github.com/colbymchenry/devpit/internal/tui/create"
 	"github.com/colbymchenry/devpit/internal/tui/dashboard"
 	"github.com/colbymchenry/devpit/internal/tui/detail"
 	"github.com/colbymchenry/devpit/internal/tui/history"
@@ -46,6 +47,7 @@ type Model struct {
 	detail     detail.Model
 	launch     launch.Model
 	history    history.Model
+	create     create.Model
 
 	projectDir string
 	tmux       *tmux.Tmux
@@ -55,14 +57,28 @@ type Model struct {
 	shared     *shared
 }
 
-// Run starts the TUI application.
+// Run starts the TUI application at the dashboard view.
 func Run() error {
+	return RunAtView("")
+}
+
+// RunAtView starts the TUI application at a specific view.
+// Pass "" for the default dashboard view.
+func RunAtView(view string) error {
 	projectDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("get working directory: %w", err)
 	}
 
 	m := NewModel(projectDir)
+
+	switch view {
+	case "create":
+		m.activeView = core.ViewCreate
+		m.create = create.New()
+		m.create.Focus()
+	}
+
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	m.shared.program = p // shared pointer — visible to bubbletea's copy of m
 
@@ -77,8 +93,9 @@ func NewModel(projectDir string) Model {
 		activeView: core.ViewDashboard,
 		dashboard:  dashboard.New(),
 		detail:     detail.New(),
-		launch:     launch.New(),
+		launch:     launch.NewWithProject(projectDir),
 		history:    history.New(),
+		create:     create.New(),
 		projectDir: projectDir,
 		tmux:       t,
 		keys:       core.DefaultKeyMap(),
@@ -106,11 +123,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.detail = m.detail.SetSize(msg.Width, msg.Height-4)
 		m.history = m.history.SetSize(msg.Width, msg.Height-4)
 		m.launch = m.launch.SetSize(msg.Width, msg.Height-4)
+		m.create = m.create.SetSize(msg.Width, msg.Height-4)
 		return m, nil
 
 	case tea.KeyMsg:
 		// Global quit (not in launch form where q is valid input)
-		if key.Matches(msg, m.keys.Quit) && m.activeView != core.ViewLaunch {
+		if key.Matches(msg, m.keys.Quit) && m.activeView != core.ViewLaunch && m.activeView != core.ViewCreate {
 			return m, tea.Quit
 		}
 
@@ -124,7 +142,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 				// Fall through to let detail.Update handle it
-			case core.ViewLaunch, core.ViewHistory:
+			case core.ViewLaunch, core.ViewHistory, core.ViewCreate:
 				m.activeView = core.ViewDashboard
 				return m, nil
 			case core.ViewDashboard:
@@ -163,9 +181,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case core.ViewHistory:
 			cmds = append(cmds, m.loadHistory())
 		case core.ViewLaunch:
-			m.launch = launch.New()
+			m.launch = launch.NewWithProject(m.projectDir)
 			m.launch = m.launch.SetSize(m.width, m.height-4)
 			m.launch.Focus()
+		case core.ViewCreate:
+			m.create = create.New()
+			m.create = m.create.SetSize(m.width, m.height-4)
+			m.create.Focus()
 		}
 		return m, tea.Batch(cmds...)
 
@@ -316,6 +338,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.loadHistory())
 		return m, tea.Batch(cmds...)
 
+	case create.CreateSessionEndedMsg:
+		// User returned from the tmux create session — go back to dashboard.
+		m.activeView = core.ViewDashboard
+		cmds = append(cmds, m.loadHistory())
+		return m, tea.Batch(cmds...)
+
 	case core.PipelineStartedMsg:
 		m.activeView = core.ViewDetail
 		m.detail = m.detail.SetRunID(msg.Record.ID, m.projectDir)
@@ -349,6 +377,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+	case core.ViewCreate:
+		var cmd tea.Cmd
+		m.create, cmd = m.create.Update(msg, m.projectDir)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 	}
 
 	return m, tea.Batch(cmds...)
@@ -366,6 +400,8 @@ func (m Model) View() string {
 		content = m.launch.View()
 	case core.ViewHistory:
 		content = m.history.View()
+	case core.ViewCreate:
+		content = m.create.View()
 	}
 
 	help := m.helpView()
@@ -406,11 +442,13 @@ func (m Model) helpView() string {
 	var keys []string
 	switch m.activeView {
 	case core.ViewDashboard:
-		keys = []string{"n:new", "h:history", "enter:view", "r:retry", "x:kill", "d:delete", "q:quit"}
+		keys = []string{"n:new", "c:create", "h:history", "enter:view", "r:retry", "x:kill", "d:delete", "q:quit"}
 	case core.ViewDetail:
 		keys = []string{"enter:view output", "r:retry", "esc:back", "q:quit"}
 	case core.ViewLaunch:
 		keys = []string{"tab:next field", "enter:submit", "esc:cancel"}
+	case core.ViewCreate:
+		keys = []string{"tab:next field", "space:toggle", "enter:submit", "esc:cancel"}
 	case core.ViewHistory:
 		keys = []string{"enter:view", "esc:back"}
 	}

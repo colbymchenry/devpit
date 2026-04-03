@@ -120,6 +120,103 @@ func BuildDesignQAPrompt(task, coderOutput, reviewerOutput string) string {
 	return BuildPrompt("design-qa", task, ctx)
 }
 
+// BuildWorkflowPrompt constructs the user message for a workflow step.
+// Unlike BuildPrompt, it handles arbitrary step names by using the step's
+// Context field for ordering and falling back to title-cased labels.
+func BuildWorkflowPrompt(step StepConfig, task string, priorContext map[string]string) string {
+	var b strings.Builder
+
+	b.WriteString("# Task\n\n")
+	b.WriteString(task)
+	b.WriteString("\n")
+
+	// Prior context in the order declared by step.Context.
+	if len(priorContext) > 0 {
+		b.WriteString("\n# Context from Previous Steps\n")
+		for _, key := range step.Context {
+			val, ok := priorContext[key]
+			if !ok {
+				continue
+			}
+			b.WriteString("\n## ")
+			b.WriteString(contextLabelFor(key))
+			b.WriteString("\n\n")
+			b.WriteString(val)
+			b.WriteString("\n")
+		}
+	}
+
+	b.WriteString("\n# Output\n\n")
+	if step.Directive != "" {
+		b.WriteString(step.Directive)
+		if !strings.HasSuffix(step.Directive, "\n") {
+			b.WriteString("\n")
+		}
+		b.WriteString("\n")
+	} else if directive, ok := roleDirectives[step.AgentName()]; ok {
+		b.WriteString(directive)
+	}
+
+	b.WriteString(fmt.Sprintf("Write your complete response to `.pipeline/%s.md` before finishing.\n", step.Name))
+
+	if step.Loop != nil {
+		b.WriteString(fmt.Sprintf("End your response with a `## Result` section containing exactly one of: %s or %s.\n",
+			step.Loop.PassMarker, step.Loop.FailMarker))
+	} else {
+		b.WriteString("End your response with a `## Result` section containing exactly one of: PASS, FAIL, ALL CLEAR, or ISSUES FOUND (whichever applies to your role).\n")
+	}
+
+	return b.String()
+}
+
+// BuildWorkflowFollowUpPrompt builds a follow-up prompt for a workflow step.
+func BuildWorkflowFollowUpPrompt(step StepConfig, task string) string {
+	var b strings.Builder
+
+	b.WriteString("# Follow-Up Task\n\n")
+	b.WriteString("This is a follow-up to your previous work. You already have the full context from the prior conversation.\n\n")
+	b.WriteString(task)
+	b.WriteString("\n")
+
+	b.WriteString("\n# Output\n\n")
+	if step.Directive != "" {
+		b.WriteString(step.Directive)
+		if !strings.HasSuffix(step.Directive, "\n") {
+			b.WriteString("\n")
+		}
+		b.WriteString("\n")
+	} else if directive, ok := roleDirectives[step.AgentName()]; ok {
+		b.WriteString(directive)
+	}
+
+	b.WriteString(fmt.Sprintf("Write your complete response to `.pipeline/%s.md` before finishing.\n", step.Name))
+
+	if step.Loop != nil {
+		b.WriteString(fmt.Sprintf("End your response with a `## Result` section containing exactly one of: %s or %s.\n",
+			step.Loop.PassMarker, step.Loop.FailMarker))
+	} else {
+		b.WriteString("End your response with a `## Result` section containing exactly one of: PASS, FAIL, ALL CLEAR, or ISSUES FOUND (whichever applies to your role).\n")
+	}
+
+	return b.String()
+}
+
+// contextLabelFor returns a human-readable label for a step name.
+// Uses the built-in contextLabels if available, otherwise title-cases the name.
+func contextLabelFor(name string) string {
+	if label, ok := contextLabels[name]; ok {
+		return label
+	}
+	// Title-case: "baseline-test" → "Baseline Test's Output"
+	words := strings.Split(strings.ReplaceAll(name, "-", " "), " ")
+	for i, w := range words {
+		if len(w) > 0 {
+			words[i] = strings.ToUpper(w[:1]) + w[1:]
+		}
+	}
+	return strings.Join(words, " ") + "'s Output"
+}
+
 // BuildFollowUpPrompt builds a minimal prompt for follow-up runs.
 // The agent already has full conversation history via --resume, so we
 // only send the new task without prior context sections.

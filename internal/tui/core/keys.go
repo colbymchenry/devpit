@@ -16,6 +16,7 @@ type KeyMap struct {
 	Delete  key.Binding
 	Kill    key.Binding
 	Retry   key.Binding
+	Create  key.Binding
 	Filter  key.Binding
 	Bottom  key.Binding
 	Top     key.Binding
@@ -71,6 +72,10 @@ func DefaultKeyMap() KeyMap {
 		Retry: key.NewBinding(
 			key.WithKeys("r"),
 			key.WithHelp("r", "retry"),
+		),
+		Create: key.NewBinding(
+			key.WithKeys("c"),
+			key.WithHelp("c", "create workflow"),
 		),
 		Filter: key.NewBinding(
 			key.WithKeys("/"),

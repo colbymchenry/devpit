@@ -1,0 +1,37 @@
+# Example: Benchmark-and-improve loop
+#
+# This workflow benchmarks a system, analyzes results, implements improvements,
+# and re-benchmarks — looping until a performance target is met.
+
+name: optimize-performance
+description: Iterative benchmark-and-improve loop
+
+steps:
+  # Step 1: Establish baseline metrics
+  - name: baseline
+    agent: benchmarker
+    directive: "Run the full benchmark suite. Record all metrics as a baseline."
+
+  # Step 2: Analyze baseline and propose improvements
+  - name: analyst
+    agent: analyzer
+    context: [baseline]
+    directive: "Analyze the baseline metrics. Identify bottlenecks and propose specific code changes to improve performance."
+
+  # Step 3: Implement the proposed improvements
+  - name: improver
+    agent: coder
+    context: [analyst]
+    directive: "Implement the improvements proposed by the analyst. Make actual code changes."
+
+  # Step 4: Re-benchmark and check if target is met
+  # On failure, loops back to analyst to try again (up to 5 iterations)
+  - name: verifier
+    agent: benchmarker
+    context: [improver, baseline]
+    directive: "Re-run the full benchmark suite. Compare against baseline metrics."
+    loop:
+      goto: analyst
+      max: 5
+      pass: "TARGET MET"
+      fail: "TARGET NOT MET"

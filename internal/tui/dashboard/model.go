@@ -221,6 +221,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, func() tea.Msg {
 				return core.NavigateMsg{View: core.ViewHistory}
 			}
+		case key.Matches(msg, m.keys.Create):
+			return m, func() tea.Msg {
+				return core.NavigateMsg{View: core.ViewCreate}
+			}
 		}
 	}
 	return m, nil
@@ -239,7 +243,7 @@ func (m Model) View() string {
 	bc := lipgloss.Color(core.ColorBorder)
 
 	// Count stats for the title
-	title := "Pipelines"
+	title := "Runs"
 	if len(m.rows) > 0 {
 		running := 0
 		for _, r := range m.rows {
@@ -248,7 +252,7 @@ func (m Model) View() string {
 			}
 		}
 		if running > 0 {
-			title = fmt.Sprintf("Pipelines  %s",
+			title = fmt.Sprintf("Runs  %s",
 				lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorAmber)).Render(
 					fmt.Sprintf("%d running", running)))
 		}
@@ -260,7 +264,7 @@ func (m Model) View() string {
 	if len(m.rows) == 0 && len(m.sessions) == 0 {
 		lines = append(lines, core.PanelEmpty(panelWidth, bc))
 		emptyMsg := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorMuted)).
-			Render("No pipelines yet. Press n to launch one.")
+			Render("No runs yet. Press n to start one, or c to create a workflow.")
 		lines = append(lines, core.PanelRow(emptyMsg, panelWidth, bc))
 		lines = append(lines, core.PanelEmpty(panelWidth, bc))
 		lines = append(lines, core.PanelBottom(panelWidth, bc))
