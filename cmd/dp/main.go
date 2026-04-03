@@ -114,6 +114,12 @@ func init() {
 	// dp pipeline stop
 	pipelineCmd.AddCommand(stopCmd)
 
+	// dp pipeline follow
+	pipelineCmd.AddCommand(followCmd)
+
+	// dp pipeline queue
+	pipelineCmd.AddCommand(queueCmd)
+
 	// dp pipeline peek
 	pipelineCmd.AddCommand(peekCmd)
 	peekCmd.Flags().IntVarP(&flagPeekLines, "lines", "n", 50, "Number of lines to capture")
@@ -159,6 +165,17 @@ Examples:
 		fmt.Fprintf(os.Stderr, "Pipeline: %s\n", strings.Join(steps, " → "))
 		fmt.Fprintf(os.Stderr, "Task: %s\n\n", task)
 
+		// Generate and save session IDs for resume capability.
+		// These UUIDs are passed to agents via --session-id so we can
+		// resume conversations with --resume on follow-up runs.
+		sessions := pipeline.GenerateSessionMap(
+			time.Now().Format("20060102T150405"),
+			task, flagAgent, steps,
+		)
+		if err := pipeline.SaveSessionMap(projectDir, sessions); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not save session map: %v\n", err)
+		}
+
 		result, err := pipeline.Run(pipeline.PipelineOpts{
 			Task:        task,
 			ProjectDir:  projectDir,
@@ -168,6 +185,7 @@ Examples:
 			MaxRetries:  flagMaxRetries,
 			SkipReview:  flagSkipReview,
 			SkipQA:      flagSkipQA,
+			SessionMap:  sessions,
 			OnStepStart: func(step string, attempt int) {
 				if attempt > 1 {
 					fmt.Fprintf(os.Stderr, "→ %s (attempt %d)\n", step, attempt)
@@ -324,6 +342,139 @@ var stopCmd = &cobra.Command{
 			fmt.Println("No pipeline sessions running.")
 		} else {
 			fmt.Printf("\nStopped %d session(s).\n", killed)
+		}
+
+		// Clear queue and session tracking
+		projectDir, _ := os.Getwd()
+		if projectDir != "" {
+			if err := pipeline.ClearQueue(projectDir); err == nil {
+				fmt.Println("  Queue cleared.")
+			}
+			if err := pipeline.DeleteSessionMap(projectDir); err == nil {
+				fmt.Println("  Session map cleared.")
+			}
+		}
+		return nil
+	},
+}
+
+// --- dp pipeline follow ---
+
+var followCmd = &cobra.Command{
+	Use:   "follow <task>",
+	Short: "Queue a follow-up task for the current pipeline",
+	Long: `Queue a follow-up prompt that runs through the same pipeline agents,
+resuming their conversations with --resume to preserve full context.
+
+The follow-up waits in a queue and runs when the pipeline is idle.
+
+Examples:
+  dp pipeline follow "Make the button blue instead of green"
+  dp pipeline follow "Also add error handling for edge cases"`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		task := args[0]
+		projectDir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		// Verify sessions.json exists (pipeline must have run at least once)
+		sessions, err := pipeline.LoadSessionMap(projectDir)
+		if err != nil {
+			return fmt.Errorf("load session map: %w", err)
+		}
+		if sessions == nil {
+			return fmt.Errorf("no pipeline session found — run 'dp pipeline' first")
+		}
+
+		// Enqueue the follow-up
+		item, err := pipeline.EnqueueFollowUp(projectDir, task)
+		if err != nil {
+			return fmt.Errorf("enqueue: %w", err)
+		}
+
+		fmt.Fprintf(os.Stderr, "Queued follow-up: %s\n", item.Task)
+
+		count, _ := pipeline.PendingCount(projectDir)
+		fmt.Fprintf(os.Stderr, "Queue depth: %d\n", count)
+
+		// Try to become the watcher (non-blocking flock).
+		// If another process holds the lock, we're done — it will pick up our item.
+		became := pipeline.WatchAndProcess(pipeline.WatcherOpts{
+			ProjectDir:  projectDir,
+			AgentPreset: sessions.AgentPreset,
+			Model:       flagModel,
+			StepTimeout: flagTimeout,
+			MaxRetries:  flagMaxRetries,
+			SkipReview:  flagSkipReview,
+			SkipQA:      flagSkipQA,
+			OnStepStart: func(step string, attempt int) {
+				if attempt > 1 {
+					fmt.Fprintf(os.Stderr, "  → %s (attempt %d)\n", step, attempt)
+				} else {
+					fmt.Fprintf(os.Stderr, "  → %s\n", step)
+				}
+			},
+			OnStepDone: func(step string, passed bool, _ string) {
+				if passed {
+					fmt.Fprintf(os.Stderr, "    done\n")
+				} else {
+					fmt.Fprintf(os.Stderr, "    failed\n")
+				}
+			},
+			OnItemStart: func(item *pipeline.QueueItem) {
+				fmt.Fprintf(os.Stderr, "\n═══ Follow-up: %s ═══\n\n", item.Task)
+			},
+			OnItemDone: func(item *pipeline.QueueItem, err error) {
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "  Follow-up failed: %v\n", err)
+				} else {
+					fmt.Fprintf(os.Stderr, "  Follow-up complete.\n")
+				}
+			},
+		})
+
+		if became {
+			fmt.Fprintf(os.Stderr, "Watcher finished — queue empty.\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "Watcher already running — it will pick up this item.\n")
+		}
+
+		return nil
+	},
+}
+
+// --- dp pipeline queue ---
+
+var queueCmd = &cobra.Command{
+	Use:   "queue",
+	Short: "Show the follow-up queue",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		projectDir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		q, err := pipeline.LoadQueue(projectDir)
+		if err != nil {
+			return err
+		}
+
+		if len(q.Items) == 0 {
+			fmt.Println("Queue is empty.")
+			return nil
+		}
+
+		fmt.Printf("  %-16s  %-8s  %s\n", "ID", "STATUS", "TASK")
+		fmt.Printf("  %-16s  %-8s  %s\n", "────────────────", "────────", "────────────────────────────────")
+		for _, item := range q.Items {
+			task := item.Task
+			if len(task) > 50 {
+				task = task[:47] + "..."
+			}
+			fmt.Printf("  %-16s  %-8s  %s\n", item.ID, item.Status, task)
 		}
 		return nil
 	},

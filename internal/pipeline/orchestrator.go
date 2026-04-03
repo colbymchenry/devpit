@@ -56,6 +56,15 @@ type PipelineOpts struct {
 
 	// OnStepDone is called when a pipeline step completes. May be nil.
 	OnStepDone func(step string, passed bool, output string)
+
+	// SessionMap holds pre-generated session IDs for each agent step.
+	// If nil, session IDs are not passed (legacy behavior).
+	SessionMap *SessionMap
+
+	// IsFollowUp indicates this is a follow-up run using --resume.
+	// When true, prompts use BuildFollowUpPrompt and agents are resumed
+	// with their prior conversation history.
+	IsFollowUp bool
 }
 
 // PipelineResult contains the results of a full pipeline run.
@@ -110,18 +119,29 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 
 	stepSpawn := func(step string) SpawnOptions {
 		effort := DefaultEffort[step]
-		return SpawnOptions{
+		so := SpawnOptions{
 			AgentPreset: opts.AgentPreset,
 			StepTimeout: opts.StepTimeout,
 			Model:       model,
 			Effort:      effort,
 		}
+		if opts.SessionMap != nil {
+			if opts.IsFollowUp {
+				so.ResumeID = opts.SessionMap.Agents[step]
+			} else {
+				so.SessionID = opts.SessionMap.Agents[step]
+			}
+		}
+		return so
 	}
 
 	// --- Step 1: Architect ---
 	notifyStart(opts.OnStepStart, "architect", 1)
 	architectOutput, err := runStep(t, "architect", opts, stepSpawn("architect"),
 		func() string {
+			if opts.IsFollowUp {
+				return BuildFollowUpPrompt("architect", opts.Task)
+			}
 			return BuildArchitectPrompt(opts.Task)
 		})
 	if err != nil {
@@ -135,6 +155,9 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 	notifyStart(opts.OnStepStart, "coder", 1)
 	coderOutput, err := runStep(t, "coder", opts, stepSpawn("coder"),
 		func() string {
+			if opts.IsFollowUp {
+				return BuildFollowUpPrompt("coder", opts.Task)
+			}
 			return BuildCoderPrompt(opts.Task, architectOutput)
 		})
 	if err != nil {
@@ -152,6 +175,9 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 
 		testerOutput, err = runStep(t, "tester", opts, stepSpawn("tester"),
 			func() string {
+				if opts.IsFollowUp {
+					return BuildFollowUpPrompt("tester", opts.Task)
+				}
 				return BuildTesterPrompt(opts.Task, coderOutput)
 			})
 		if err != nil {
@@ -173,6 +199,9 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 		notifyStart(opts.OnStepStart, "coder", attempt+1)
 		coderOutput, err = runStep(t, "coder", opts, stepSpawn("coder"),
 			func() string {
+				if opts.IsFollowUp {
+					return BuildFollowUpPrompt("coder", fmt.Sprintf("%s\n\nTest failures (attempt %d of %d):\n\n%s", opts.Task, attempt, opts.MaxRetries, testerOutput))
+				}
 				return BuildCoderRetryPrompt(opts.Task, architectOutput, testerOutput, attempt)
 			})
 		if err != nil {
@@ -190,6 +219,9 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 		notifyStart(opts.OnStepStart, "reviewer", 1)
 		reviewerOutput, err := runStep(t, "reviewer", opts, stepSpawn("reviewer"),
 			func() string {
+				if opts.IsFollowUp {
+					return BuildFollowUpPrompt("reviewer", opts.Task)
+				}
 				return BuildReviewerPrompt(opts.Task, architectOutput, coderOutput, testerOutput)
 			})
 		if err != nil {
@@ -221,6 +253,9 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 
 			qaOutput, err = runStep(t, VisualQAAgent, opts, stepSpawn(VisualQAAgent),
 				func() string {
+					if opts.IsFollowUp {
+						return BuildFollowUpPrompt(VisualQAAgent, opts.Task)
+					}
 					return BuildDesignQAPrompt(opts.Task, coderOutput, reviewerOut)
 				})
 			if err != nil {
@@ -242,6 +277,9 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 			notifyStart(opts.OnStepStart, "coder", attempt+1)
 			coderOutput, err = runStep(t, "coder", opts, stepSpawn("coder"),
 				func() string {
+					if opts.IsFollowUp {
+						return BuildFollowUpPrompt("coder", fmt.Sprintf("%s\n\nVisual issues found (attempt %d of %d):\n\n%s", opts.Task, attempt, opts.MaxRetries, qaOutput))
+					}
 					return BuildCoderDesignFixPrompt(opts.Task, architectOutput, qaOutput, attempt)
 				})
 			if err != nil {

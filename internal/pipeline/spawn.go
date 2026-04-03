@@ -27,6 +27,14 @@ type SpawnOptions struct {
 	// Effort sets the effort level for this step (e.g., "low", "medium", "high", "max").
 	// Empty string uses the preset default.
 	Effort string
+
+	// SessionID passes --session-id <uuid> on the first pipeline run so we
+	// control the Claude Code session UUID for later resume.
+	SessionID string
+
+	// ResumeID passes --resume <uuid> on follow-up runs to load the agent's
+	// prior conversation history from disk.
+	ResumeID string
 }
 
 // SpawnAgent creates a tmux session for a pipeline agent, accepts startup dialogs,
@@ -71,6 +79,16 @@ func SpawnAgent(t *tmux.Tmux, name, workDir, prompt string, opts SpawnOptions) (
 		}
 		if opts.Effort != "" {
 			cmd += " --effort " + opts.Effort
+		}
+	}
+
+	// For Claude, pass --session-id on first run (deterministic session tracking)
+	// or --resume on follow-up runs (load prior conversation history from disk).
+	if rc.Command == "claude" {
+		if opts.ResumeID != "" {
+			cmd += " --resume " + opts.ResumeID
+		} else if opts.SessionID != "" {
+			cmd += " --session-id " + opts.SessionID
 		}
 	}
 

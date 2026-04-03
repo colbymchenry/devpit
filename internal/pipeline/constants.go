@@ -36,6 +36,21 @@ const (
 	ResultAllClear = "ALL CLEAR"
 	// ResultIssuesFound is the marker design-qa agents use to signal visual issues.
 	ResultIssuesFound = "ISSUES FOUND"
+
+	// SessionsFile is the filename for persisted agent session IDs.
+	SessionsFile = "sessions.json"
+
+	// QueueFile is the filename for the follow-up queue.
+	QueueFile = "queue.json"
+
+	// QueueLockFile is the flock for queue file operations.
+	QueueLockFile = "queue.lock"
+
+	// WatcherLockFile is the flock for the queue watcher process.
+	WatcherLockFile = "watcher.lock"
+
+	// DefaultWatcherIdleTimeout is how long the watcher waits with no new items before exiting.
+	DefaultWatcherIdleTimeout = 5 * time.Minute
 )
 
 // CoreAgents are the agents that are always part of the pipeline.

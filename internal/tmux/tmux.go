@@ -19,6 +19,7 @@ import (
 
 	"github.com/colbymchenry/devpit/internal/config"
 	"github.com/colbymchenry/devpit/internal/constants"
+	"github.com/colbymchenry/devpit/internal/flock"
 )
 
 // sessionNudgeLocks serializes nudges to the same session.
@@ -1618,7 +1619,7 @@ func (t *Tmux) NudgeSessionWithOpts(session, message string, opts NudgeOpts) err
 	// or empty input. (GH#gt-ukl8)
 	if opts.TownRoot != "" {
 		lockPath := nudgeFlockPath(opts.TownRoot, session)
-		unlock, err := acquireFlockLock(lockPath, nudgeLockTimeout)
+		unlock, err := flock.AcquireLock(lockPath, nudgeLockTimeout)
 		if err != nil {
 			return fmt.Errorf("cross-process nudge lock for session %q: %w", session, err)
 		}

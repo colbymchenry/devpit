@@ -119,3 +119,25 @@ func BuildDesignQAPrompt(task, coderOutput, reviewerOutput string) string {
 	}
 	return BuildPrompt("design-qa", task, ctx)
 }
+
+// BuildFollowUpPrompt builds a minimal prompt for follow-up runs.
+// The agent already has full conversation history via --resume, so we
+// only send the new task without prior context sections.
+func BuildFollowUpPrompt(role, task string) string {
+	var b strings.Builder
+
+	b.WriteString("# Follow-Up Task\n\n")
+	b.WriteString("This is a follow-up to your previous work. You already have the full context from the prior conversation.\n\n")
+	b.WriteString(task)
+	b.WriteString("\n")
+
+	// Role-specific output directives (same as initial run)
+	b.WriteString("\n# Output\n\n")
+	if directive, ok := roleDirectives[role]; ok {
+		b.WriteString(directive)
+	}
+	b.WriteString("Write your complete response to `.pipeline/<your-agent-name>.md` before finishing.\n")
+	b.WriteString("End your response with a `## Result` section containing exactly one of: PASS, FAIL, ALL CLEAR, or ISSUES FOUND (whichever applies to your role).\n")
+
+	return b.String()
+}
