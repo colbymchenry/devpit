@@ -20,16 +20,17 @@ import (
 )
 
 const tickInterval = 500 * time.Millisecond
+const animInterval = 150 * time.Millisecond
 
-var titleStyle = lipgloss.NewStyle().
+var titleBadge = lipgloss.NewStyle().
 	Bold(true).
-	Foreground(lipgloss.Color("#FFFFFF")).
-	Background(lipgloss.Color("#7C3AED")).
+	Foreground(lipgloss.Color(core.ColorWhite)).
+	Background(lipgloss.Color(core.ColorPurple)).
 	Padding(0, 1)
 
 var helpStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#6B7280")).
-	Padding(1, 0, 0, 0)
+	Foreground(lipgloss.Color(core.ColorMuted)).
+	Padding(0, 0, 0, 0)
 
 // shared holds mutable state shared across all copies of Model.
 // Bubbletea copies the model by value, so we need a pointer to
@@ -88,6 +89,7 @@ func NewModel(projectDir string) Model {
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		tickCmd(),
+		animTickCmd(),
 		m.refreshSessions(),
 		m.loadHistory(),
 	)
@@ -112,16 +114,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-		// Global back
+		// Global back — let sub-views handle Back first when they have
+		// internal navigation (e.g., detail output viewport → step list).
 		if key.Matches(msg, m.keys.Back) {
 			switch m.activeView {
-			case core.ViewDetail, core.ViewLaunch, core.ViewHistory:
+			case core.ViewDetail:
+				if !m.detail.ShowingOutput() {
+					m.activeView = core.ViewDashboard
+					return m, nil
+				}
+				// Fall through to let detail.Update handle it
+			case core.ViewLaunch, core.ViewHistory:
 				m.activeView = core.ViewDashboard
 				return m, nil
 			case core.ViewDashboard:
 				return m, tea.Quit
 			}
 		}
+
+	case core.AnimTickMsg:
+		cmds = append(cmds, animTickCmd())
+		m.dashboard = m.dashboard.AnimTick()
+		m.detail = m.detail.AnimTick()
+		return m, tea.Batch(cmds...)
 
 	case core.TickMsg:
 		cmds = append(cmds, tickCmd())
@@ -161,13 +176,143 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case core.StepStartMsg:
 		m.detail = m.detail.StepStarted(msg)
+		// Persist step progress to disk so it survives view re-navigation
+		if rec, err := pipeline.LoadRunRecord(m.projectDir, msg.RunID); err == nil {
+			found := false
+			for i := range rec.Steps {
+				if rec.Steps[i].Name == msg.Step {
+					rec.Steps[i].Status = pipeline.StatusRunning
+					rec.Steps[i].Attempt = msg.Attempt
+					found = true
+					break
+				}
+			}
+			if !found {
+				rec.Steps = append(rec.Steps, pipeline.StepRecord{
+					Name:      msg.Step,
+					Status:    pipeline.StatusRunning,
+					Attempt:   msg.Attempt,
+					StartedAt: time.Now(),
+				})
+			}
+			_ = pipeline.SaveRunRecord(m.projectDir, rec)
+		}
 		return m, nil
 
 	case core.StepDoneMsg:
 		m.detail = m.detail.StepDone(msg)
+		if rec, err := pipeline.LoadRunRecord(m.projectDir, msg.RunID); err == nil {
+			for i := range rec.Steps {
+				if rec.Steps[i].Name == msg.Step {
+					if msg.Passed {
+						rec.Steps[i].Status = pipeline.StatusPassed
+					} else {
+						rec.Steps[i].Status = pipeline.StatusFailed
+					}
+					now := time.Now()
+					rec.Steps[i].EndedAt = &now
+					break
+				}
+			}
+			_ = pipeline.SaveRunRecord(m.projectDir, rec)
+		}
 		return m, nil
 
 	case core.PipelineFinishedMsg:
+		// Reload the detail view's run record so the status badge and
+		// step states reflect the final outcome (failed, passed, etc.)
+		m.detail = m.detail.RefreshRun(m.projectDir)
+		cmds = append(cmds, m.loadHistory())
+		return m, tea.Batch(cmds...)
+
+	case core.SessionKillMsg:
+		agent := msg.Agent
+		runID := msg.RunID
+		t := m.tmux
+		projectDir := m.projectDir
+		killCmd := func() tea.Msg {
+			session := pipeline.SessionPrefix + agent
+			_ = t.KillSessionWithProcesses(session)
+			if runID != "" {
+				if rec, err := pipeline.LoadRunRecord(projectDir, runID); err == nil {
+					if rec.Status == pipeline.StatusRunning {
+						rec.Status = pipeline.StatusCancelled
+						now := time.Now()
+						rec.EndedAt = &now
+						_ = pipeline.SaveRunRecord(projectDir, rec)
+					}
+				}
+			}
+			return nil
+		}
+		return m, tea.Sequence(killCmd, m.refreshSessions(), m.loadHistory())
+
+	case core.RunDeletedMsg:
+		_ = pipeline.DeleteRunRecord(m.projectDir, msg.RunID)
+		cmds = append(cmds, m.loadHistory())
+		return m, tea.Batch(cmds...)
+
+	case core.RetryPipelineMsg:
+		record := pipeline.NewRunRecord(msg.Task, msg.Agent)
+		if err := pipeline.SaveRunRecord(m.projectDir, record); err != nil {
+			return m, nil
+		}
+		projectDir := m.projectDir
+		program := m.shared.program
+		go func() {
+			result, err := pipeline.Run(pipeline.PipelineOpts{
+				Task:        msg.Task,
+				ProjectDir:  projectDir,
+				AgentPreset: msg.Agent,
+				OnStepStart: func(step string, attempt int) {
+					program.Send(core.StepStartMsg{
+						RunID:   record.ID,
+						Step:    step,
+						Attempt: attempt,
+					})
+				},
+				OnStepDone: func(step string, passed bool, output string) {
+					program.Send(core.StepDoneMsg{
+						RunID:  record.ID,
+						Step:   step,
+						Passed: passed,
+						Output: output,
+					})
+				},
+			})
+			loaded, loadErr := pipeline.LoadRunRecord(projectDir, record.ID)
+			if loadErr == nil {
+				record = loaded
+			}
+			if err != nil {
+				record.Status = pipeline.StatusFailed
+			} else {
+				allPassed := true
+				if result != nil {
+					for _, s := range result.Steps {
+						if !s.Passed && !s.Skipped {
+							allPassed = false
+							break
+						}
+					}
+				}
+				if allPassed {
+					record.Status = pipeline.StatusPassed
+				} else {
+					record.Status = pipeline.StatusFailed
+				}
+			}
+			now := time.Now()
+			record.EndedAt = &now
+			_ = pipeline.SaveRunRecord(projectDir, record)
+			program.Send(core.PipelineFinishedMsg{
+				RunID:  record.ID,
+				Result: result,
+				Err:    err,
+			})
+		}()
+		m.activeView = core.ViewDetail
+		m.detail = m.detail.SetRunID(record.ID, m.projectDir)
 		cmds = append(cmds, m.loadHistory())
 		return m, tea.Batch(cmds...)
 
@@ -212,8 +357,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	var content string
 
-	title := titleStyle.Render(" DevPit ")
-
 	switch m.activeView {
 	case core.ViewDashboard:
 		content = m.dashboard.View()
@@ -227,8 +370,32 @@ func (m Model) View() string {
 
 	help := m.helpView()
 
+	// Title bar: badge + subtle line
+	badge := titleBadge.Render("DevPit")
+	lineWidth := m.width - lipgloss.Width(badge) - 1
+	if lineWidth < 0 {
+		lineWidth = 0
+	}
+	titleLine := badge + " " + lipgloss.NewStyle().
+		Foreground(lipgloss.Color(core.ColorDim)).
+		Render(strings.Repeat("─", lineWidth))
+
+	// Calculate remaining space for content
+	titleHeight := 1 // title line
+	helpHeight := lipgloss.Height(help)
+	contentHeight := m.height - titleHeight - helpHeight - 2 // 2 for spacing
+	if contentHeight < 5 {
+		contentHeight = 5
+	}
+
+	// Pad content to push help bar to bottom
+	contentLines := strings.Count(content, "\n") + 1
+	if contentLines < contentHeight {
+		content += strings.Repeat("\n", contentHeight-contentLines)
+	}
+
 	return lipgloss.JoinVertical(lipgloss.Left,
-		title,
+		titleLine,
 		"",
 		content,
 		help,
@@ -239,20 +406,38 @@ func (m Model) helpView() string {
 	var keys []string
 	switch m.activeView {
 	case core.ViewDashboard:
-		keys = []string{"n:new", "h:history", "enter:view", "q:quit"}
+		keys = []string{"n:new", "h:history", "enter:view", "r:retry", "x:kill", "d:delete", "q:quit"}
 	case core.ViewDetail:
-		keys = []string{"enter:view output", "esc:back", "q:quit"}
+		keys = []string{"enter:view output", "r:retry", "esc:back", "q:quit"}
 	case core.ViewLaunch:
 		keys = []string{"tab:next field", "enter:submit", "esc:cancel"}
 	case core.ViewHistory:
 		keys = []string{"enter:view", "esc:back"}
 	}
-	return helpStyle.Render(strings.Join(keys, "  |  "))
+
+	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorPurpleLight)).Bold(true)
+	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorMuted))
+	sepStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorDim))
+
+	var parts []string
+	for _, k := range keys {
+		pair := strings.SplitN(k, ":", 2)
+		if len(pair) == 2 {
+			parts = append(parts, keyStyle.Render(pair[0])+descStyle.Render(" "+pair[1]))
+		}
+	}
+	return helpStyle.Render(strings.Join(parts, sepStyle.Render("  │  ")))
 }
 
 func tickCmd() tea.Cmd {
 	return tea.Tick(tickInterval, func(t time.Time) tea.Msg {
 		return core.TickMsg(t)
+	})
+}
+
+func animTickCmd() tea.Cmd {
+	return tea.Tick(animInterval, func(t time.Time) tea.Msg {
+		return core.AnimTickMsg(t)
 	})
 }
 
@@ -300,10 +485,19 @@ func (m Model) captureDetailOutput() tea.Cmd {
 		return nil
 	}
 	session := pipeline.SessionPrefix + agent
+	projectDir := m.projectDir
 	return func() tea.Msg {
-		output, err := m.tmux.CapturePane(session, 200)
+		// Use color-preserving capture so ANSI escape codes come through
+		output, err := m.tmux.CapturePaneColor(session, 200)
 		if err != nil {
-			return core.PaneOutputMsg{Agent: agent}
+			// Session is dead — fall back to saved artifact so the user
+			// can still inspect what happened.
+			artifact, _ := pipeline.LoadArtifact(projectDir, agent)
+			if artifact == "" {
+				// Try the raw capture which includes startup, errors, etc.
+				artifact, _ = pipeline.LoadArtifact(projectDir, agent+"-raw")
+			}
+			return core.PaneOutputMsg{Agent: agent, Output: artifact, IsIdle: true}
 		}
 		idle := m.tmux.IsIdle(session)
 		return core.PaneOutputMsg{Agent: agent, Output: output, IsIdle: idle}

@@ -126,6 +126,15 @@ func ListRunRecords(projectDir string) ([]*RunRecord, error) {
 	return records, nil
 }
 
+// DeleteRunRecord removes a run record from disk by ID.
+func DeleteRunRecord(projectDir, id string) error {
+	path := filepath.Join(HistoryDir(projectDir), id+".json")
+	if err := os.Remove(path); err != nil {
+		return fmt.Errorf("delete run record %q: %w", id, err)
+	}
+	return nil
+}
+
 // ActiveRunRecords returns only records with status "running".
 func ActiveRunRecords(projectDir string) ([]*RunRecord, error) {
 	all, err := ListRunRecords(projectDir)

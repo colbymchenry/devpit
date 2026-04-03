@@ -9,6 +9,9 @@ import (
 // TickMsg fires on a regular interval to refresh tmux state.
 type TickMsg time.Time
 
+// AnimTickMsg fires at a fast interval for smooth spinner/shimmer animation.
+type AnimTickMsg time.Time
+
 // SessionInfo holds live status for a pipeline tmux session.
 type SessionInfo struct {
 	Agent    string
@@ -58,6 +61,23 @@ type PipelineStartedMsg struct {
 // HistoryLoadedMsg carries loaded history records.
 type HistoryLoadedMsg struct {
 	Records []*pipeline.RunRecord
+}
+
+// RunDeletedMsg is sent after a pipeline run record has been deleted.
+type RunDeletedMsg struct {
+	RunID string
+}
+
+// SessionKillMsg requests that a live tmux session be killed.
+type SessionKillMsg struct {
+	Agent string // agent name (without pipeline- prefix)
+	RunID string // associated run ID, if any
+}
+
+// RetryPipelineMsg requests that a failed/cancelled pipeline be re-run.
+type RetryPipelineMsg struct {
+	Task  string
+	Agent string
 }
 
 // NavigateMsg requests a view change.

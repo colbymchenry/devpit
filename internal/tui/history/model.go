@@ -89,24 +89,73 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 // View renders the history browser.
 func (m Model) View() string {
-	var b strings.Builder
-
-	header := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#7C3AED")).
-		Bold(true)
-	b.WriteString(header.Render("Pipeline History") + "\n\n")
-
-	records := m.filtered()
-
-	if len(records) == 0 {
-		muted := lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280"))
-		b.WriteString(muted.Render("  No pipeline runs found.") + "\n")
-		return b.String()
+	panelWidth := m.width
+	if panelWidth < 40 {
+		panelWidth = 40
+	}
+	if panelWidth > 120 {
+		panelWidth = 120
 	}
 
-	maxRows := m.height - 4
-	if maxRows < 1 {
-		maxRows = 10
+	bc := lipgloss.Color(core.ColorBorder)
+	records := m.filtered()
+
+	title := "History"
+	if len(records) > 0 {
+		title = fmt.Sprintf("History  %s",
+			lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorMuted)).
+				Render(fmt.Sprintf("%d runs", len(records))))
+	}
+
+	var lines []string
+	lines = append(lines, core.PanelTop(title, panelWidth, bc))
+
+	if len(records) == 0 {
+		lines = append(lines, core.PanelEmpty(panelWidth, bc))
+		emptyMsg := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorMuted)).
+			Render("No pipeline runs found.")
+		lines = append(lines, core.PanelRow(emptyMsg, panelWidth, bc))
+		lines = append(lines, core.PanelEmpty(panelWidth, bc))
+		lines = append(lines, core.PanelBottom(panelWidth, bc))
+		return strings.Join(lines, "\n")
+	}
+
+	// Column widths
+	colStatus := 10
+	colAgent := 10
+	colSteps := 8
+	colTime := 8
+	colTask := panelWidth - 4 - colStatus - colAgent - colSteps - colTime - 8
+	if colTask < 20 {
+		colTask = 20
+	}
+
+	// Table header
+	headerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorMuted)).Bold(true)
+	header := fmt.Sprintf("%s%s%s%s%s",
+		headerStyle.Render(core.PadRight("STATUS", colStatus)),
+		headerStyle.Render(core.PadRight("  TASK", colTask+2)),
+		headerStyle.Render(core.PadRight("AGENT", colAgent)),
+		headerStyle.Render(core.PadRight("STEPS", colSteps)),
+		headerStyle.Render(core.PadRight("TIME", colTime)),
+	)
+	lines = append(lines, core.PanelEmpty(panelWidth, bc))
+	lines = append(lines, core.PanelRow(header, panelWidth, bc))
+
+	dimLine := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorDim))
+	underline := fmt.Sprintf("%s%s%s%s%s",
+		dimLine.Render(core.PadRight(strings.Repeat("─", colStatus-1), colStatus)),
+		dimLine.Render(core.PadRight("  "+strings.Repeat("─", colTask-1), colTask+2)),
+		dimLine.Render(core.PadRight(strings.Repeat("─", colAgent-1), colAgent)),
+		dimLine.Render(core.PadRight(strings.Repeat("─", colSteps-1), colSteps)),
+		dimLine.Render(core.PadRight(strings.Repeat("─", colTime-1), colTime)),
+	)
+	lines = append(lines, core.PanelRow(underline, panelWidth, bc))
+
+	// Rows
+	maxRows := m.height - 10
+	if maxRows < 3 {
+		maxRows = 3
 	}
 	visible := records
 	if len(visible) > maxRows {
@@ -114,36 +163,57 @@ func (m Model) View() string {
 	}
 
 	for i, r := range visible {
-		cursor := "  "
-		style := lipgloss.NewStyle().Foreground(lipgloss.Color("#D1D5DB"))
-		if i == m.cursor {
-			cursor = "> "
-			style = lipgloss.NewStyle().Foreground(lipgloss.Color("#A78BFA")).Bold(true)
-		}
+		isSelected := i == m.cursor
 
+		// Status
 		icon := core.StatusIcon(string(r.Status))
-		iconStyle := core.StatusStyle(string(r.Status))
-
-		task := r.Task
-		if len(task) > 50 {
-			task = task[:47] + "..."
-		}
-
-		steps := fmt.Sprintf("%d steps", len(r.Steps))
-		ago := timeAgo(r.StartedAt)
-
-		line := fmt.Sprintf("%s%s %s  %s  %s  %s",
-			cursor,
-			iconStyle.Render(icon),
-			style.Render(task),
-			lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280")).Render(r.Agent),
-			lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280")).Render(steps),
-			lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280")).Render(ago),
+		label := core.StatusLabel(string(r.Status))
+		statusCell := core.PadRight(
+			core.StatusStyle(string(r.Status)).Render(icon+" "+label),
+			colStatus,
 		)
-		b.WriteString(line + "\n")
+
+		// Task
+		task := core.Truncate(r.Task, colTask-1)
+		taskStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorText))
+		cursor := "  "
+		if isSelected {
+			cursor = lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorPurpleLight)).Render("▸ ")
+			taskStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorWhite)).Bold(true)
+		}
+		taskCell := cursor + core.PadRight(taskStyle.Render(task), colTask)
+
+		// Agent
+		agentCell := core.PadRight(
+			lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorMuted)).Render(r.Agent),
+			colAgent,
+		)
+
+		// Steps
+		stepsCell := core.PadRight(
+			lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorDim)).Render(fmt.Sprintf("%d", len(r.Steps))),
+			colSteps,
+		)
+
+		// Time
+		timeCell := core.PadRight(
+			lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorDim)).Render(timeAgo(r.StartedAt)),
+			colTime,
+		)
+
+		lines = append(lines, core.PanelRow(statusCell+taskCell+agentCell+stepsCell+timeCell, panelWidth, bc))
 	}
 
-	return b.String()
+	if len(records) > maxRows {
+		indicator := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorDim)).
+			Render(fmt.Sprintf("  ↕ %d of %d", maxRows, len(records)))
+		lines = append(lines, core.PanelRow(indicator, panelWidth, bc))
+	}
+
+	lines = append(lines, core.PanelEmpty(panelWidth, bc))
+	lines = append(lines, core.PanelBottom(panelWidth, bc))
+
+	return strings.Join(lines, "\n")
 }
 
 func timeAgo(t time.Time) string {
@@ -153,12 +223,12 @@ func timeAgo(t time.Time) string {
 	d := time.Since(t)
 	switch {
 	case d < time.Minute:
-		return "just now"
+		return "now"
 	case d < time.Hour:
-		return fmt.Sprintf("%dm ago", int(d.Minutes()))
+		return fmt.Sprintf("%dm", int(d.Minutes()))
 	case d < 24*time.Hour:
-		return fmt.Sprintf("%dh ago", int(d.Hours()))
+		return fmt.Sprintf("%dh", int(d.Hours()))
 	default:
-		return fmt.Sprintf("%dd ago", int(d.Hours()/24))
+		return fmt.Sprintf("%dd", int(d.Hours()/24))
 	}
 }

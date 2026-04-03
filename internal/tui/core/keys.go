@@ -13,6 +13,9 @@ type KeyMap struct {
 	New     key.Binding
 	History key.Binding
 	Tab     key.Binding
+	Delete  key.Binding
+	Kill    key.Binding
+	Retry   key.Binding
 	Filter  key.Binding
 	Bottom  key.Binding
 	Top     key.Binding
@@ -56,6 +59,18 @@ func DefaultKeyMap() KeyMap {
 		Tab: key.NewBinding(
 			key.WithKeys("tab"),
 			key.WithHelp("tab", "next field"),
+		),
+		Delete: key.NewBinding(
+			key.WithKeys("d", "backspace"),
+			key.WithHelp("d", "delete"),
+		),
+		Kill: key.NewBinding(
+			key.WithKeys("x"),
+			key.WithHelp("x", "kill"),
+		),
+		Retry: key.NewBinding(
+			key.WithKeys("r"),
+			key.WithHelp("r", "retry"),
 		),
 		Filter: key.NewBinding(
 			key.WithKeys("/"),

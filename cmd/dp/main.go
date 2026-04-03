@@ -83,6 +83,7 @@ Each agent runs in its own tmux session. Agents are defined by
 
 var (
 	flagAgent      string
+	flagModel      string
 	flagTimeout    time.Duration
 	flagMaxRetries int
 	flagSkipReview bool
@@ -95,6 +96,7 @@ func init() {
 	// dp pipeline
 	rootCmd.AddCommand(pipelineCmd)
 	pipelineCmd.Flags().StringVar(&flagAgent, "agent", "", "AI runtime preset (claude, gemini, codex, etc.)")
+	pipelineCmd.Flags().StringVar(&flagModel, "model", "", "Model override (e.g., opus[1m], sonnet); defaults to opus[1m]")
 	pipelineCmd.Flags().DurationVar(&flagTimeout, "timeout", pipeline.DefaultStepTimeout, "Max time per pipeline step")
 	pipelineCmd.Flags().IntVar(&flagMaxRetries, "retries", pipeline.DefaultMaxRetries, "Max coder↔tester/design-qa retries")
 	pipelineCmd.Flags().BoolVar(&flagSkipReview, "skip-review", false, "Skip the reviewer step")
@@ -104,9 +106,13 @@ func init() {
 	pipelineCmd.AddCommand(agentCmd)
 	agentCmd.Flags().BoolVar(&flagDetach, "detach", false, "Spawn without attaching")
 	agentCmd.Flags().StringVar(&flagAgent, "agent", "", "AI runtime preset")
+	agentCmd.Flags().StringVar(&flagModel, "model", "", "Model override (e.g., opus[1m], sonnet)")
 
 	// dp pipeline status
 	pipelineCmd.AddCommand(statusCmd)
+
+	// dp pipeline stop
+	pipelineCmd.AddCommand(stopCmd)
 
 	// dp pipeline peek
 	pipelineCmd.AddCommand(peekCmd)
@@ -157,6 +163,7 @@ Examples:
 			Task:        task,
 			ProjectDir:  projectDir,
 			AgentPreset: flagAgent,
+			Model:       flagModel,
 			StepTimeout: flagTimeout,
 			MaxRetries:  flagMaxRetries,
 			SkipReview:  flagSkipReview,
@@ -203,15 +210,20 @@ Examples:
 			return err
 		}
 
-		cfg, err := pipeline.LoadAgentConfig(projectDir, name)
-		if err != nil {
-			return fmt.Errorf("agent %q not found: %w", name, err)
+		if !pipeline.AgentExists(projectDir, name) {
+			return fmt.Errorf("agent %q not found (run dp setup-agents first)", name)
 		}
 
-		fullPrompt := pipeline.BuildPrompt(cfg.Body, prompt, nil)
+		fullPrompt := pipeline.BuildPrompt(name, prompt, nil)
 		t := tmux.NewTmux()
+		model := flagModel
+		if model == "" {
+			model = pipeline.DefaultModel
+		}
 		session, err := pipeline.SpawnAgent(t, name, projectDir, fullPrompt, pipeline.SpawnOptions{
 			AgentPreset: flagAgent,
+			Model:       model,
+			Effort:      pipeline.DefaultEffort[name],
 		})
 		if err != nil {
 			return err
@@ -275,6 +287,43 @@ var statusCmd = &cobra.Command{
 
 		if !found {
 			fmt.Println("No pipeline sessions running.")
+		}
+		return nil
+	},
+}
+
+// --- dp pipeline stop ---
+
+var stopCmd = &cobra.Command{
+	Use:   "stop",
+	Short: "Stop all running pipeline agent sessions",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		t := tmux.NewTmux()
+		sessions, err := t.ListSessions()
+		if err != nil {
+			fmt.Println("No pipeline sessions running.")
+			return nil
+		}
+
+		var killed int
+		for _, session := range sessions {
+			if !strings.HasPrefix(session, pipeline.SessionPrefix) {
+				continue
+			}
+			agentName := strings.TrimPrefix(session, pipeline.SessionPrefix)
+			if err := t.KillSessionWithProcesses(session); err != nil {
+				fmt.Fprintf(os.Stderr, "  ✗ %s: %v\n", agentName, err)
+			} else {
+				fmt.Printf("  ✓ stopped %s\n", agentName)
+				killed++
+			}
+		}
+
+		if killed == 0 {
+			fmt.Println("No pipeline sessions running.")
+		} else {
+			fmt.Printf("\nStopped %d session(s).\n", killed)
 		}
 		return nil
 	},

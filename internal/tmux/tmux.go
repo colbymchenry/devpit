@@ -2290,6 +2290,12 @@ func (t *Tmux) CapturePane(session string, lines int) (string, error) {
 	return t.run("capture-pane", "-p", "-t", session, "-S", fmt.Sprintf("-%d", lines))
 }
 
+// CapturePaneColor captures visible pane content with ANSI escape codes preserved.
+// Use this for display purposes where colors matter (e.g., TUI output view).
+func (t *Tmux) CapturePaneColor(session string, lines int) (string, error) {
+	return t.run("capture-pane", "-p", "-e", "-t", session, "-S", fmt.Sprintf("-%d", lines))
+}
+
 // CapturePaneAll captures all scrollback history.
 func (t *Tmux) CapturePaneAll(session string) (string, error) {
 	return t.run("capture-pane", "-p", "-t", session, "-S", "-")
@@ -2751,12 +2757,25 @@ func matchesPromptPrefix(line, readyPromptPrefix string) bool {
 	return strings.HasPrefix(trimmed, normalizedPrefix) || (prefix != "" && trimmed == prefix)
 }
 
+// spinnerLineRe matches Claude Code's thinking spinner format: <glyph> <Verb>…
+// e.g., "✱ Cooking…", "+ Frosting…", "· Thinking… (42s · thinking)"
+// Matches the structural pattern rather than specific glyph characters.
+var spinnerLineRe = regexp.MustCompile(`^\S\s[A-Z][a-zA-Z]+\x{2026}`)
+
 func hasBusyIndicator(line string) bool {
 	trimmed := strings.TrimSpace(line)
 	if trimmed == "" {
 		return false
 	}
-	return strings.Contains(trimmed, "esc to interrupt")
+	if strings.Contains(trimmed, "esc to interrupt") {
+		return true
+	}
+	// Spinner line = agent is thinking. During thinking, "esc to interrupt"
+	// is NOT shown but ❯ IS visible — without this check, the agent looks idle.
+	if !strings.HasPrefix(trimmed, "❯") && spinnerLineRe.MatchString(trimmed) {
+		return true
+	}
+	return false
 }
 
 func readyPromptPrefixForSession(t *Tmux, session string) string {

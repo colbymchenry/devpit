@@ -9,6 +9,20 @@ import (
 	"github.com/colbymchenry/devpit/internal/tmux"
 )
 
+// DefaultModel is the default model for pipeline agents.
+// Uses 1M context for maximum codebase coverage.
+const DefaultModel = "opus[1m]"
+
+// DefaultEffort maps pipeline step names to their default effort levels.
+// These are used when the agent .md frontmatter doesn't specify an effort.
+var DefaultEffort = map[string]string{
+	"architect": "max",
+	"coder":     "high",
+	"tester":    "high",
+	"reviewer":  "high",
+	"design-qa": "high",
+}
+
 // PipelineOpts configures a pipeline run.
 type PipelineOpts struct {
 	// Task is the user's task description.
@@ -20,6 +34,10 @@ type PipelineOpts struct {
 	// AgentPreset overrides the AI runtime (e.g., "claude", "gemini", "codex").
 	// Empty uses the default.
 	AgentPreset string
+
+	// Model overrides the model for all steps (e.g., "opus[1m]", "sonnet").
+	// Empty uses DefaultModel.
+	Model string
 
 	// StepTimeout is the max time per pipeline step.
 	StepTimeout time.Duration
@@ -62,50 +80,68 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 		opts.MaxRetries = DefaultMaxRetries
 	}
 
-	// Ensure artifact directory exists
-	if err := os.MkdirAll(fmt.Sprintf("%s/%s", opts.ProjectDir, ArtifactDir), 0o755); err != nil {
+	// Clear stale artifacts from previous runs. ExtractOutput checks for
+	// .pipeline/<agent>.md files first — stale files from a failed run would
+	// be returned instead of the actual tmux output from the current run.
+	artifactDir := fmt.Sprintf("%s/%s", opts.ProjectDir, ArtifactDir)
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
 		return nil, fmt.Errorf("create artifact dir: %w", err)
+	}
+	for _, name := range []string{"architect", "coder", "tester", "reviewer", VisualQAAgent} {
+		_ = os.Remove(fmt.Sprintf("%s/%s.md", artifactDir, name))
+		_ = os.Remove(fmt.Sprintf("%s/%s-raw.md", artifactDir, name))
 	}
 
 	t := tmux.NewTmux()
 	result := &PipelineResult{}
 
-	// Load agent configs
-	agents := make(map[string]*AgentConfig)
-	for _, name := range []string{"architect", "coder", "tester", "reviewer", VisualQAAgent} {
-		cfg, err := LoadAgentConfig(opts.ProjectDir, name)
-		if err != nil {
-			if name == VisualQAAgent {
-				continue // design-qa is optional
-			}
-			return nil, fmt.Errorf("load agent %q: %w", name, err)
+	// Verify required agent files exist (loaded via --agent flag at spawn time)
+	for _, name := range []string{"architect", "coder", "tester", "reviewer"} {
+		if !AgentExists(opts.ProjectDir, name) {
+			return nil, fmt.Errorf("agent %q not found (run dp setup-agents first)", name)
 		}
-		agents[name] = cfg
+	}
+	hasDesignQA := AgentExists(opts.ProjectDir, VisualQAAgent)
+
+	model := opts.Model
+	if model == "" {
+		model = DefaultModel
 	}
 
-	spawnOpts := SpawnOptions{
-		AgentPreset: opts.AgentPreset,
-		StepTimeout: opts.StepTimeout,
+	stepSpawn := func(step string) SpawnOptions {
+		effort := DefaultEffort[step]
+		return SpawnOptions{
+			AgentPreset: opts.AgentPreset,
+			StepTimeout: opts.StepTimeout,
+			Model:       model,
+			Effort:      effort,
+		}
 	}
 
 	// --- Step 1: Architect ---
-	architectOutput, err := runStep(t, "architect", opts, agents, spawnOpts,
+	notifyStart(opts.OnStepStart, "architect", 1)
+	architectOutput, err := runStep(t, "architect", opts, stepSpawn("architect"),
 		func() string {
-			return BuildArchitectPrompt(agents["architect"].Body, opts.Task)
+			return BuildArchitectPrompt(opts.Task)
 		})
 	if err != nil {
+		notifyDone(opts.OnStepDone, "architect", false, "")
 		return nil, fmt.Errorf("architect: %w", err)
 	}
+	notifyDone(opts.OnStepDone, "architect", true, architectOutput)
 	result.Steps = append(result.Steps, StepResult{Name: "architect", Output: architectOutput, Passed: true})
 
 	// --- Step 2: Coder ---
-	coderOutput, err := runStep(t, "coder", opts, agents, spawnOpts,
+	notifyStart(opts.OnStepStart, "coder", 1)
+	coderOutput, err := runStep(t, "coder", opts, stepSpawn("coder"),
 		func() string {
-			return BuildCoderPrompt(agents["coder"].Body, opts.Task, architectOutput)
+			return BuildCoderPrompt(opts.Task, architectOutput)
 		})
 	if err != nil {
+		notifyDone(opts.OnStepDone, "coder", false, "")
 		return nil, fmt.Errorf("coder: %w", err)
 	}
+	notifyDone(opts.OnStepDone, "coder", true, coderOutput)
 	result.Steps = append(result.Steps, StepResult{Name: "coder", Output: coderOutput, Passed: true})
 
 	// --- Step 3: Tester with coder retry loop ---
@@ -114,11 +150,12 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 	for attempt := 1; attempt <= opts.MaxRetries; attempt++ {
 		notifyStart(opts.OnStepStart, "tester", attempt)
 
-		testerOutput, err = runStep(t, "tester", opts, agents, spawnOpts,
+		testerOutput, err = runStep(t, "tester", opts, stepSpawn("tester"),
 			func() string {
-				return BuildTesterPrompt(agents["tester"].Body, opts.Task, coderOutput)
+				return BuildTesterPrompt(opts.Task, coderOutput)
 			})
 		if err != nil {
+			notifyDone(opts.OnStepDone, "tester", false, "")
 			return nil, fmt.Errorf("tester (attempt %d): %w", attempt, err)
 		}
 
@@ -134,11 +171,12 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 
 		// Retry coder with failure context
 		notifyStart(opts.OnStepStart, "coder", attempt+1)
-		coderOutput, err = runStep(t, "coder", opts, agents, spawnOpts,
+		coderOutput, err = runStep(t, "coder", opts, stepSpawn("coder"),
 			func() string {
-				return BuildCoderRetryPrompt(agents["coder"].Body, opts.Task, architectOutput, testerOutput, attempt)
+				return BuildCoderRetryPrompt(opts.Task, architectOutput, testerOutput, attempt)
 			})
 		if err != nil {
+			notifyDone(opts.OnStepDone, "coder", false, "")
 			return nil, fmt.Errorf("coder retry (attempt %d): %w", attempt, err)
 		}
 		notifyDone(opts.OnStepDone, "coder", true, coderOutput)
@@ -149,18 +187,20 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 	if opts.SkipReview {
 		result.Steps = append(result.Steps, StepResult{Name: "reviewer", Skipped: true})
 	} else {
-		reviewerOutput, err := runStep(t, "reviewer", opts, agents, spawnOpts,
+		notifyStart(opts.OnStepStart, "reviewer", 1)
+		reviewerOutput, err := runStep(t, "reviewer", opts, stepSpawn("reviewer"),
 			func() string {
-				return BuildReviewerPrompt(agents["reviewer"].Body, opts.Task, architectOutput, coderOutput, testerOutput)
+				return BuildReviewerPrompt(opts.Task, architectOutput, coderOutput, testerOutput)
 			})
 		if err != nil {
+			notifyDone(opts.OnStepDone, "reviewer", false, "")
 			return nil, fmt.Errorf("reviewer: %w", err)
 		}
+		notifyDone(opts.OnStepDone, "reviewer", true, reviewerOutput)
 		result.Steps = append(result.Steps, StepResult{Name: "reviewer", Output: reviewerOutput, Passed: true})
 	}
 
 	// --- Step 5: Design QA with coder retry loop ---
-	_, hasDesignQA := agents[VisualQAAgent]
 	if opts.SkipQA || !hasDesignQA {
 		if hasDesignQA && opts.SkipQA {
 			result.Steps = append(result.Steps, StepResult{Name: VisualQAAgent, Skipped: true})
@@ -179,11 +219,12 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 		for attempt := 1; attempt <= opts.MaxRetries; attempt++ {
 			notifyStart(opts.OnStepStart, VisualQAAgent, attempt)
 
-			qaOutput, err = runStep(t, VisualQAAgent, opts, agents, spawnOpts,
+			qaOutput, err = runStep(t, VisualQAAgent, opts, stepSpawn(VisualQAAgent),
 				func() string {
-					return BuildDesignQAPrompt(agents[VisualQAAgent].Body, opts.Task, coderOutput, reviewerOut)
+					return BuildDesignQAPrompt(opts.Task, coderOutput, reviewerOut)
 				})
 			if err != nil {
+				notifyDone(opts.OnStepDone, VisualQAAgent, false, "")
 				return nil, fmt.Errorf("design-qa (attempt %d): %w", attempt, err)
 			}
 
@@ -199,11 +240,12 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 
 			// Retry coder with visual issues context
 			notifyStart(opts.OnStepStart, "coder", attempt+1)
-			coderOutput, err = runStep(t, "coder", opts, agents, spawnOpts,
+			coderOutput, err = runStep(t, "coder", opts, stepSpawn("coder"),
 				func() string {
-					return BuildCoderDesignFixPrompt(agents["coder"].Body, opts.Task, architectOutput, qaOutput, attempt)
+					return BuildCoderDesignFixPrompt(opts.Task, architectOutput, qaOutput, attempt)
 				})
 			if err != nil {
+				notifyDone(opts.OnStepDone, "coder", false, "")
 				return nil, fmt.Errorf("coder design fix (attempt %d): %w", attempt, err)
 			}
 			notifyDone(opts.OnStepDone, "coder", true, coderOutput)
@@ -216,8 +258,11 @@ func Run(opts PipelineOpts) (*PipelineResult, error) {
 
 // runStep executes a single pipeline step: spawn agent, wait for completion,
 // capture output, kill session, save artifact.
-func runStep(t *tmux.Tmux, name string, opts PipelineOpts, _ map[string]*AgentConfig, spawnOpts SpawnOptions, buildPrompt func() string) (string, error) {
+func runStep(t *tmux.Tmux, name string, opts PipelineOpts, spawnOpts SpawnOptions, buildPrompt func() string) (string, error) {
 	prompt := buildPrompt()
+
+	// Save the prompt for debugging — lets the user inspect exactly what each agent received.
+	_ = SaveArtifact(opts.ProjectDir, name+"-prompt", prompt)
 
 	session, err := SpawnAgent(t, name, opts.ProjectDir, prompt, spawnOpts)
 	if err != nil {
@@ -234,7 +279,13 @@ func runStep(t *tmux.Tmux, name string, opts PipelineOpts, _ map[string]*AgentCo
 		return "", fmt.Errorf("extract output: %w", err)
 	}
 
+	// Always save the artifact so the user can inspect what happened
 	_ = SaveArtifact(opts.ProjectDir, name, output)
+
+	// Check for errors in the output before passing to the next step
+	if err := ValidateAgentOutput(name, output); err != nil {
+		return "", err
+	}
 
 	return output, nil
 }

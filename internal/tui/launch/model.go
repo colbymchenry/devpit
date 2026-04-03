@@ -41,6 +41,11 @@ func New() Model {
 	ti.Placeholder = "Describe the task..."
 	ti.CharLimit = 500
 	ti.Width = 60
+	ti.Prompt = "  "
+	ti.PromptStyle = lipgloss.NewStyle()
+	ti.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
+	ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#4B5563"))
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#A78BFA"))
 
 	agents := config.ListAgentPresets()
 	// Ensure claude is first
@@ -212,60 +217,97 @@ func (m Model) submit(projectDir string, program *tea.Program) (Model, tea.Cmd) 
 
 // View renders the launch form.
 func (m Model) View() string {
-	var b strings.Builder
+	panelWidth := m.width
+	if panelWidth < 40 {
+		panelWidth = 40
+	}
+	if panelWidth > 80 {
+		panelWidth = 80
+	}
 
-	header := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#7C3AED")).
-		Bold(true)
-	b.WriteString(header.Render("New Pipeline") + "\n\n")
+	bc := lipgloss.Color(core.ColorBorder)
+	label := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorMuted))
+	focusLabel := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorPurpleLight)).Bold(true)
+
+	var lines []string
+	lines = append(lines, core.PanelTop("New Pipeline", panelWidth, bc))
+	lines = append(lines, core.PanelEmpty(panelWidth, bc))
 
 	// Task input
-	label := lipgloss.NewStyle().Foreground(lipgloss.Color("#D1D5DB"))
-	focusLabel := lipgloss.NewStyle().Foreground(lipgloss.Color("#A78BFA")).Bold(true)
-
+	var taskLabel string
 	if m.focus == fieldTask {
-		b.WriteString(focusLabel.Render("Task:") + "\n")
+		taskLabel = focusLabel.Render("Task")
 	} else {
-		b.WriteString(label.Render("Task:") + "\n")
+		taskLabel = label.Render("Task")
 	}
-	b.WriteString("  " + m.taskInput.View() + "\n\n")
+	lines = append(lines, core.PanelRow(taskLabel, panelWidth, bc))
+	lines = append(lines, core.PanelRow(m.taskInput.View(), panelWidth, bc))
+
+	// Underline
+	inputWidth := panelWidth - 6
+	if inputWidth > 80 {
+		inputWidth = 80
+	}
+	if m.focus == fieldTask {
+		lines = append(lines, core.PanelRow(
+			lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorPurple)).Render(strings.Repeat("─", inputWidth)),
+			panelWidth, bc))
+	} else {
+		lines = append(lines, core.PanelRow(
+			lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorDim)).Render(strings.Repeat("─", inputWidth)),
+			panelWidth, bc))
+	}
+
+	lines = append(lines, core.PanelEmpty(panelWidth, bc))
 
 	// Agent selector
+	var agentLabel string
 	if m.focus == fieldAgent {
-		b.WriteString(focusLabel.Render("Agent:") + "  ")
+		agentLabel = focusLabel.Render("Agent")
 	} else {
-		b.WriteString(label.Render("Agent:") + "  ")
+		agentLabel = label.Render("Agent")
 	}
-	agentStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFFFF")).
-		Background(lipgloss.Color("#7C3AED")).
-		Padding(0, 1)
-	b.WriteString(agentStyle.Render(m.agent))
-	muted := lipgloss.NewStyle().Foreground(lipgloss.Color("#6B7280"))
-	b.WriteString(muted.Render("  (left/right to change)") + "\n\n")
+	lines = append(lines, core.PanelRow(agentLabel, panelWidth, bc))
+
+	arrowColor := core.ColorDim
+	if m.focus == fieldAgent {
+		arrowColor = core.ColorPurpleLight
+	}
+	arrowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(arrowColor))
+	agentBadge := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(core.ColorWhite)).
+		Background(lipgloss.Color(core.ColorPurple)).
+		Padding(0, 1).
+		Bold(true)
+
+	agentRow := arrowStyle.Render("◀ ") + agentBadge.Render(m.agent) + arrowStyle.Render(" ▶")
+	lines = append(lines, core.PanelRow(agentRow, panelWidth, bc))
+
+	lines = append(lines, core.PanelEmpty(panelWidth, bc))
 
 	// Submit button
 	if m.focus == fieldSubmit {
 		btn := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(lipgloss.Color("#22C55E")).
+			Foreground(lipgloss.Color("#1F2937")).
+			Background(lipgloss.Color(core.ColorGreen)).
 			Bold(true).
-			Padding(0, 2)
-		b.WriteString("  " + btn.Render("Start Pipeline") + "\n")
+			Padding(0, 3)
+		lines = append(lines, core.PanelRow(btn.Render("Start Pipeline"), panelWidth, bc))
 	} else {
 		btn := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#6B7280")).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#6B7280")).
-			Padding(0, 2)
-		b.WriteString("  " + btn.Render("Start Pipeline") + "\n")
+			Foreground(lipgloss.Color(core.ColorMuted))
+		lines = append(lines, core.PanelRow(btn.Render("[ Start Pipeline ]"), panelWidth, bc))
 	}
 
 	// Error message
 	if m.err != "" {
-		errStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#EF4444"))
-		b.WriteString("\n" + errStyle.Render(m.err) + "\n")
+		errStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorRed))
+		lines = append(lines, core.PanelEmpty(panelWidth, bc))
+		lines = append(lines, core.PanelRow(errStyle.Render(m.err), panelWidth, bc))
 	}
 
-	return b.String()
+	lines = append(lines, core.PanelEmpty(panelWidth, bc))
+	lines = append(lines, core.PanelBottom(panelWidth, bc))
+
+	return strings.Join(lines, "\n")
 }
