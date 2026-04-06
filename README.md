@@ -2,7 +2,7 @@
 
 **Sequential agent pipeline for AI coding agents**
 
-DevPit runs specialized AI agents one at a time on a task — architect, coder, tester, reviewer, and (for visual projects) design-qa. Each agent runs in its own tmux session with full visibility. You can attach and watch any agent work in real-time.
+DevPit runs specialized AI agents one at a time on a task. Each agent runs in its own tmux session with full visibility. You can attach and watch any agent work in real-time.
 
 ## How It Works
 
@@ -10,19 +10,17 @@ DevPit runs specialized AI agents one at a time on a task — architect, coder, 
 dp pipeline "Add a health check endpoint"
 ```
 
-```
-Architect → Coder → Tester ↔ Coder (retry) → Reviewer → Design QA ↔ Coder (retry) → Done
-```
-
-Each step:
+DevPit executes a workflow — an ordered list of steps. Each step:
 1. Spawns an AI agent in a tmux session
 2. Sends the task + context from previous steps
 3. Waits for the agent to finish
 4. Captures output and passes it to the next step
 
-Two retry loops keep quality high:
-- **Coder ↔ Tester** — if tests fail, coder fixes and tester re-runs (max 3)
-- **Coder ↔ Design QA** — if visual issues found, coder fixes and QA re-checks (max 3)
+Steps can have loop-back conditions (e.g., tester fails → jump back to coder, retry up to 3 times).
+
+The default workflow runs: **architect → coder → tester ↔ coder (retry) → reviewer → design-qa ↔ coder (retry)**
+
+Custom workflows support arbitrary step sequences, context dependencies, and configurable pass/fail markers.
 
 ## Installation
 
@@ -36,8 +34,7 @@ Two retry loops keep quality high:
 ```bash
 git clone https://github.com/colbymchenry/devpit.git
 cd devpit
-go build -o dp ./cmd/dp
-cp dp /usr/local/bin/dp  # or ~/.local/bin/dp
+make install  # builds and installs to ~/.local/bin/dp
 ```
 
 ### From npm
@@ -49,34 +46,48 @@ npm install -g devpit
 ## Quick Start
 
 ```bash
-# 1. Generate agents for your project (one-time)
-dp setup-agents
+# 1. Create a workflow (one-time)
+dp create --default
 
 # 2. Run the pipeline
 dp pipeline "Add a health check endpoint"
 ```
 
-`dp setup-agents` detects your stack, asks about your preferences, and generates tailored agent files in `.claude/agents/`.
+`dp create` spawns Claude to interview you about your project, then generates agent files (`.claude/agents/*.md`) and a workflow (`.claude/workflows/default.yaml`). Use `--default` for the standard template or describe a custom workflow.
 
 ## Commands
 
+### `dp` (no args)
+
+Launch the interactive TUI dashboard. View running and past pipelines, start new runs, create workflows, and edit workflow configs — all from one interface.
+
 ### `dp pipeline "task"`
 
-Run the full pipeline. Each step spawns one agent, waits for completion, captures output, kills the session, then moves to the next.
+Run a workflow pipeline. Loads the default workflow from `.claude/workflows/default.yaml`, or specify a custom one with `--workflow`.
 
 ```bash
 dp pipeline "Fix the login form validation"
 dp pipeline "Refactor auth module" --agent gemini
-dp pipeline "Add dark mode" --retries 2 --skip-review
+dp pipeline "Optimize performance" --workflow optimize
 ```
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--agent` | claude | AI runtime (claude, gemini, codex, etc.) |
+| `--model` | opus[1m] | Model override |
 | `--timeout` | 10m | Max time per step |
-| `--retries` | 3 | Max coder/tester or coder/design-qa retries |
-| `--skip-review` | false | Skip the reviewer step |
-| `--skip-qa` | false | Skip design-qa even if available |
+| `--retries` | 3 | Max loop-back retries |
+| `--workflow` | default | Custom workflow name (from `.claude/workflows/`) |
+
+### `dp create [prompt]`
+
+Create a new workflow interactively. Claude scans your project, interviews you, and generates agent files and a workflow YAML.
+
+```bash
+dp create                                           # TUI create form
+dp create --default                                 # Standard template
+dp create "benchmark loop that tests and improves"  # Custom workflow
+```
 
 ### `dp pipeline agent <name> "prompt"`
 
@@ -84,9 +95,15 @@ Run a single agent interactively — spawns a tmux session and attaches your ter
 
 ```bash
 dp pipeline agent architect "Design a caching layer"
-dp pipeline agent coder "Implement the plan"
-dp pipeline agent tester "Test the auth module"
-dp pipeline agent reviewer "Review the latest changes" --detach
+dp pipeline agent coder "Implement the plan" --detach
+```
+
+### `dp pipeline follow "task"`
+
+Queue a follow-up task that reuses the same agent sessions with full context.
+
+```bash
+dp pipeline follow "Make the button blue instead of green"
 ```
 
 ### `dp pipeline status`
@@ -102,14 +119,49 @@ dp pipeline peek coder
 dp pipeline peek tester -n 200
 ```
 
-### `dp setup-agents`
+### `dp pipeline stop`
 
-Interactive setup that generates `.claude/agents/*.md` files for your project. Detects your stack, interviews you about preferences, and creates tailored agents.
+Stop all running pipeline agent sessions.
 
-```bash
-dp setup-agents
-dp setup-agents --agent gemini
+## TUI Dashboard
+
+Run `dp` with no arguments to launch the interactive dashboard:
+
+- **Dashboard** — view running and past pipeline runs, retry failed ones, kill active sessions
+- **New run** (`n`) — launch a pipeline with a task, workflow, and agent selection
+- **Create workflow** (`c`) — generate a new workflow with Claude
+- **Edit workflow** (`e`) — modify workflow configs: reorder steps, edit fields, add/remove steps
+- **History** (`h`) — browse past runs with status and details
+
+## Custom Workflows
+
+Workflows are YAML files in `.claude/workflows/`:
+
+```yaml
+name: optimize
+description: Iterative benchmark-and-improve loop
+steps:
+  - name: baseline
+    agent: benchmarker
+  - name: analyst
+    context: [baseline]
+  - name: improver
+    agent: coder
+    context: [analyst]
+    directive: "Implement the improvements proposed by the analyst"
+  - name: verifier
+    agent: benchmarker
+    context: [improver]
+    loop:
+      goto: analyst
+      max: 3
+      pass: "PIPELINE_RESULT:PASS"
+      fail: "PIPELINE_RESULT:FAIL"
 ```
+
+Run with `dp pipeline "your task" --workflow optimize`.
+
+Edit workflows in the TUI with `e` from the dashboard, or directly in YAML.
 
 ## Agent Files
 
@@ -128,22 +180,7 @@ You are the architect. Analyze the task, identify affected files,
 plan the implementation, and flag risks...
 ```
 
-| Agent | Role | When |
-|-------|------|------|
-| **architect** | Plans the implementation | Always |
-| **coder** | Writes code, runs linter | Always |
-| **tester** | Writes and runs tests | Always |
-| **reviewer** | Reviews changes for quality | Always (skippable) |
-| **design-qa** | Screenshots and visual QA | Only if `.claude/agents/design-qa.md` exists |
-
-`dp setup-agents` generates these based on your project type:
-
-| Project Type | Agents |
-|-------------|--------|
-| Backend/API | architect, coder, tester, reviewer |
-| Frontend/Web | architect, coder, tester, reviewer, **design-qa** |
-| Fullstack | architect, coder, tester, reviewer, **design-qa** |
-| Native mobile | architect, coder, tester, reviewer, **design-qa** |
+`dp create` generates these based on your project type and preferences.
 
 ## Multi-Runtime Support
 
@@ -157,14 +194,6 @@ dp pipeline "task" --agent copilot   # GitHub Copilot
 ```
 
 Each runtime has its own readiness detection, prompt delivery, and startup dialog handling built into the tmux layer.
-
-## How It's Built
-
-DevPit's tmux layer handles the hard parts of agent orchestration:
-
-- **Session management** — creation, the 8-step nudge protocol, idle detection with 2-consecutive-poll filtering, NBSP-normalized prompt matching, verified Enter delivery
-- **Agent preset system** — runtime-specific commands, args, readiness detection for Claude, Gemini, Codex, Copilot, and others
-- **Startup dialog acceptance** — auto-dismisses workspace trust and bypass-permissions dialogs
 
 ## License
 
