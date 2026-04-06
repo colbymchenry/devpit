@@ -188,6 +188,29 @@ func DiscoverWorkflows(projectDir string) []string {
 }
 
 
+// SaveWorkflow validates and writes a WorkflowConfig to the given YAML path.
+func SaveWorkflow(path string, wf *WorkflowConfig) error {
+	if err := ValidateWorkflow(wf); err != nil {
+		return fmt.Errorf("validate workflow: %w", err)
+	}
+
+	data, err := yaml.Marshal(wf)
+	if err != nil {
+		return fmt.Errorf("marshal workflow: %w", err)
+	}
+
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("create workflow directory: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("write workflow %q: %w", path, err)
+	}
+
+	return nil
+}
+
 // StepNames returns the step names from a workflow config.
 func (wf *WorkflowConfig) StepNames() []string {
 	names := make([]string, len(wf.Steps))

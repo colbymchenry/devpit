@@ -85,3 +85,6 @@ type NavigateMsg struct {
 	View  View
 	RunID string
 }
+
+// WorkflowSavedMsg is sent after a workflow config has been saved to disk.
+type WorkflowSavedMsg struct{}

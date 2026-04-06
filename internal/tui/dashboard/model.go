@@ -225,6 +225,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, func() tea.Msg {
 				return core.NavigateMsg{View: core.ViewCreate}
 			}
+		case key.Matches(msg, m.keys.Edit):
+			return m, func() tea.Msg {
+				return core.NavigateMsg{View: core.ViewEditWorkflow}
+			}
 		}
 	}
 	return m, nil

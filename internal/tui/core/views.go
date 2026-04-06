@@ -9,4 +9,5 @@ const (
 	ViewLaunch
 	ViewHistory
 	ViewCreate
+	ViewEditWorkflow
 )

@@ -16,6 +16,7 @@ import (
 	"github.com/colbymchenry/devpit/internal/tui/create"
 	"github.com/colbymchenry/devpit/internal/tui/dashboard"
 	"github.com/colbymchenry/devpit/internal/tui/detail"
+	"github.com/colbymchenry/devpit/internal/tui/edit"
 	"github.com/colbymchenry/devpit/internal/tui/history"
 	"github.com/colbymchenry/devpit/internal/tui/launch"
 )
@@ -48,6 +49,7 @@ type Model struct {
 	launch     launch.Model
 	history    history.Model
 	create     create.Model
+	edit       edit.Model
 
 	projectDir string
 	tmux       *tmux.Tmux
@@ -96,6 +98,7 @@ func NewModel(projectDir string) Model {
 		launch:     launch.NewWithProject(projectDir),
 		history:    history.New(),
 		create:     create.New(),
+		edit:       edit.New(),
 		projectDir: projectDir,
 		tmux:       t,
 		keys:       core.DefaultKeyMap(),
@@ -124,11 +127,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.history = m.history.SetSize(msg.Width, msg.Height-4)
 		m.launch = m.launch.SetSize(msg.Width, msg.Height-4)
 		m.create = m.create.SetSize(msg.Width, msg.Height-4)
+		m.edit = m.edit.SetSize(msg.Width, msg.Height-4)
 		return m, nil
 
 	case tea.KeyMsg:
 		// Global quit (not in launch form where q is valid input)
-		if key.Matches(msg, m.keys.Quit) && m.activeView != core.ViewLaunch && m.activeView != core.ViewCreate {
+		if key.Matches(msg, m.keys.Quit) && m.activeView != core.ViewLaunch && m.activeView != core.ViewCreate && m.activeView != core.ViewEditWorkflow {
 			return m, tea.Quit
 		}
 
@@ -145,6 +149,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case core.ViewLaunch, core.ViewHistory, core.ViewCreate:
 				m.activeView = core.ViewDashboard
 				return m, nil
+			case core.ViewEditWorkflow:
+				// Edit view handles esc internally (dirty check, step collapse).
+				// Fall through to let edit.Update handle it.
 			case core.ViewDashboard:
 				return m, tea.Quit
 			}
@@ -188,6 +195,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.create = create.New()
 			m.create = m.create.SetSize(m.width, m.height-4)
 			m.create.Focus()
+		case core.ViewEditWorkflow:
+			m.edit = edit.New()
+			m.edit = m.edit.SetSize(m.width, m.height-4)
+			m.edit.Focus(m.projectDir)
 		}
 		return m, tea.Batch(cmds...)
 
@@ -383,6 +394,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+	case core.ViewEditWorkflow:
+		var cmd tea.Cmd
+		m.edit, cmd = m.edit.Update(msg, m.projectDir)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 	}
 
 	return m, tea.Batch(cmds...)
@@ -402,6 +419,8 @@ func (m Model) View() string {
 		content = m.history.View()
 	case core.ViewCreate:
 		content = m.create.View()
+	case core.ViewEditWorkflow:
+		content = m.edit.View()
 	}
 
 	help := m.helpView()
@@ -442,7 +461,7 @@ func (m Model) helpView() string {
 	var keys []string
 	switch m.activeView {
 	case core.ViewDashboard:
-		keys = []string{"n:new", "c:create", "h:history", "enter:view", "r:retry", "x:kill", "d:delete", "q:quit"}
+		keys = []string{"n:new", "c:create", "e:edit", "h:history", "enter:view", "r:retry", "x:kill", "d:delete", "q:quit"}
 	case core.ViewDetail:
 		keys = []string{"enter:view output", "r:retry", "esc:back", "q:quit"}
 	case core.ViewLaunch:
@@ -451,6 +470,8 @@ func (m Model) helpView() string {
 		keys = []string{"tab:next field", "space:toggle", "enter:submit", "esc:cancel"}
 	case core.ViewHistory:
 		keys = []string{"enter:view", "esc:back"}
+	case core.ViewEditWorkflow:
+		keys = []string{"tab:next field", "ctrl+s:save", "ctrl+↑↓:reorder", "enter:edit step", "a:add", "x:delete", "esc:back"}
 	}
 
 	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(core.ColorPurpleLight)).Bold(true)
