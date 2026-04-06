@@ -38,7 +38,7 @@ func StatusStyle(status string) lipgloss.Style {
 		return lipgloss.NewStyle().Foreground(lipgloss.Color(ColorGreen)).Bold(true)
 	case "failed":
 		return lipgloss.NewStyle().Foreground(lipgloss.Color(ColorRed)).Bold(true)
-	case "skipped", "cancelled":
+	case "skipped", "canceled":
 		return lipgloss.NewStyle().Foreground(lipgloss.Color(ColorMuted))
 	default:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color(ColorDim))
@@ -74,7 +74,7 @@ func StatusIcon(status string) string {
 		return "✗"
 	case "skipped":
 		return "○"
-	case "cancelled":
+	case "canceled":
 		return "⊘"
 	case "pending":
 		return "·"
@@ -94,8 +94,8 @@ func StatusLabel(status string) string {
 		return "Failed"
 	case "skipped":
 		return "Skipped"
-	case "cancelled":
-		return "Cancelled"
+	case "canceled":
+		return "Canceled"
 	case "pending":
 		return "Pending"
 	default:

@@ -269,7 +269,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if runID != "" {
 				if rec, err := pipeline.LoadRunRecord(projectDir, runID); err == nil {
 					if rec.Status == pipeline.StatusRunning {
-						rec.Status = pipeline.StatusCancelled
+						rec.Status = pipeline.StatusCanceled
 						now := time.Now()
 						rec.EndedAt = &now
 						_ = pipeline.SaveRunRecord(projectDir, rec)

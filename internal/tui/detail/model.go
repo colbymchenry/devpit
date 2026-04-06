@@ -60,7 +60,7 @@ func (m Model) SetSize(w, h int) Model {
 // canRetry returns true when the pipeline is in a retryable state.
 func (m Model) canRetry() bool {
 	return m.run != nil &&
-		(m.run.Status == pipeline.StatusFailed || m.run.Status == pipeline.StatusCancelled)
+		(m.run.Status == pipeline.StatusFailed || m.run.Status == pipeline.StatusCanceled)
 }
 
 // SetRunID loads a run record for display.
@@ -113,7 +113,7 @@ func (m Model) SetRunID(runID, projectDir string) Model {
 		m.steps = append(m.steps, row)
 	}
 
-	// Auto-focus retry button for failed/cancelled pipelines
+	// Auto-focus retry button for failed/canceled pipelines
 	if m.canRetry() {
 		m.cursor = -1
 	}
@@ -146,7 +146,7 @@ func (m Model) RefreshRun(projectDir string) Model {
 		}
 	}
 
-	// Focus retry button for failed/cancelled pipelines
+	// Focus retry button for failed/canceled pipelines
 	if m.canRetry() && m.cursor >= 0 {
 		m.cursor = -1
 	}
@@ -332,7 +332,7 @@ func (m Model) viewSteps(panelWidth int, bc lipgloss.Color) string {
 		lines = append(lines, core.PanelRow(statusBadge, panelWidth, bc))
 	}
 
-	// Retry button for failed/cancelled pipelines
+	// Retry button for failed/canceled pipelines
 	if m.canRetry() {
 		lines = append(lines, core.PanelEmpty(panelWidth, bc))
 		if m.cursor == -1 {

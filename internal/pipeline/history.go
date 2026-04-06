@@ -18,7 +18,7 @@ const (
 	StatusPassed    RunStatus = "passed"
 	StatusFailed    RunStatus = "failed"
 	StatusSkipped   RunStatus = "skipped"
-	StatusCancelled RunStatus = "cancelled"
+	StatusCanceled RunStatus = "canceled"
 )
 
 // RunRecord represents a complete pipeline run, persisted as JSON.

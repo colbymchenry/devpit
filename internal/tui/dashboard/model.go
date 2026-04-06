@@ -206,7 +206,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Retry):
 			if m.cursor < len(m.rows) {
 				row := m.rows[m.cursor]
-				if row.Status == pipeline.StatusFailed || row.Status == pipeline.StatusCancelled {
+				if row.Status == pipeline.StatusFailed || row.Status == pipeline.StatusCanceled {
 					task := row.Task
 					agent := row.Agent
 					if agent == "" {

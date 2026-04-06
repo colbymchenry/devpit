@@ -74,7 +74,7 @@ type SessionKillMsg struct {
 	RunID string // associated run ID, if any
 }
 
-// RetryPipelineMsg requests that a failed/cancelled pipeline be re-run.
+// RetryPipelineMsg requests that a failed/canceled pipeline be re-run.
 type RetryPipelineMsg struct {
 	Task  string
 	Agent string
