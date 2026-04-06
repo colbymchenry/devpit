@@ -1,6 +1,6 @@
 {
   "name": "@colbymchenry/devpit",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "DevPit CLI — sequential agent pipeline for AI coding agents",
   "main": "bin/dp.js",
   "bin": {
