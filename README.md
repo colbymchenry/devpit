@@ -4,7 +4,12 @@
 
 DevPit runs specialized AI agents one at a time on a task. Each agent runs in its own tmux session with full visibility. You can attach and watch any agent work in real-time.
 
+![Screen Recording 2026-04-06 at 9 02 44 AM](https://github.com/user-attachments/assets/b750471b-ed81-4a3c-a8b5-202f38985edd)
+
+
 ## How It Works
+<img width="800" height="537" alt="1_15zN8-DF92E1iZJUE_cqBg" src="https://github.com/user-attachments/assets/30771cc8-9d61-4c23-b82a-fe35ad04582e" />
+
 
 ```
 dp pipeline "Add a health check endpoint"
